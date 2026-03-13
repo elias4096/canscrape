@@ -1,0 +1,63 @@
+import pandas as pd
+
+# Load CAN data CSV into DataFrame
+df = pd.read_csv('can_data.csv')
+
+# Example columns: ['timestamp', 'can_id', 'byte0', 'byte1', ..., 'byte7']
+
+# Extract snapshots by timestamp ranges
+snapshot1 = df[(df['timestamp'] >= t1_start) & (df['timestamp'] <= t1_end)]
+snapshot2 = df[(df['timestamp'] >= t2_start) & (df['timestamp'] <= t2_end)]
+snapshot3 = df[(df['timestamp'] >= t3_start) & (df['timestamp'] <= t3_end)]
+
+# Aggregate snapshot frames, e.g., mean byte values per CAN ID
+agg_snap2 = snapshot2.groupby('can_id').mean()
+agg_snap3 = snapshot3.groupby('can_id').mean()
+
+# Calculate byte-wise differences between snapshot 2 and 3
+diff = agg_snap3 - agg_snap2
+
+# Identify bytes with significant changes (threshold)
+changed_bytes = (diff.abs() > threshold)
+
+# Output CAN IDs and bytes likely related to button press
+print(changed_bytes)
+
+
+
+
+
+from sklearn.cluster import DBSCAN
+from sklearn.preprocessing import StandardScaler
+
+# Standardize features
+X_scaled = StandardScaler().fit_transform(X)
+
+# Cluster to find groups of related bytes
+clustering = DBSCAN(eps=0.5, min_samples=5).fit(X_scaled)
+
+# Cluster labels (-1 means noise)
+print(clustering.labels_)
+
+
+
+
+
+
+from pyod.models.iforest import IForest  # Isolation Forest algorithm
+import numpy as np
+
+# X is your feature matrix of CAN frames or aggregated bytes
+
+# Train Isolation Forest on baseline CAN traffic (no button pressed)
+clf = IForest()
+clf.fit(X_baseline)
+
+# Predict anomaly scores on new data (e.g., during button press)
+scores = clf.decision_function(X_test)
+anomalies = clf.predict(X_test)  # 1 for anomaly, 0 for normal
+
+# Find frames or bytes flagged as anomalies
+anomalous_frames = X_test[anomalies == 1]
+
+print(f"Detected {len(anomalous_frames)} anomalous frames potentially related to button press")

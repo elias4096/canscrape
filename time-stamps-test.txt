@@ -1,0 +1,10 @@
+Hazard lights                  6       11       IDS: 020, 380, 330
+Footbrake                      19      22       IDS:
+Park brake                     44      49       IDS:
+Wipers                         62      66       IDS:
+Drivers door                   84      91       IDS: 501
+Passenger door                 106     110      IDS: 501
+Rear left door                 120     123      IDS:
+Rear right door                136     140      IDS:
+Drivers seat belt    	       160     165      IDS:
+Front Passenger seat belt      192     195      IDS:
