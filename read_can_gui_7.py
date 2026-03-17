@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
+    QCheckBox,
 )
 
 #CAN_INTERFACE = "pcan"
@@ -60,6 +61,18 @@ class InspectorWidget(QWidget):
 
         layout = QVBoxLayout()
 
+        # include bytes/bits
+        self.include_bytes = QCheckBox("Include bytes")
+        self.include_bits = QCheckBox("Include bits")
+        self.include_bytes.setChecked(True)
+        self.include_bits.setChecked(False)
+        self.include_bytes.toggled.connect(lambda _: self._on_include_toggled(self.include_bytes))
+        self.include_bits.toggled.connect(lambda _: self._on_include_toggled(self.include_bits))
+        self.include_bytes.toggled.connect(self.main_window.update_column_visibility)
+        self.include_bits.toggled.connect(self.main_window.update_column_visibility)
+        layout.addWidget(self.include_bytes)
+        layout.addWidget(self.include_bits)
+
         self.elapsed_time_label = QLabel(f"Elapsed time: {main_window.initial_timestamp} s")
         layout.addWidget(self.elapsed_time_label)
 
@@ -77,6 +90,14 @@ class InspectorWidget(QWidget):
 
         layout.addStretch()
         self.setLayout(layout)
+
+    def _on_include_toggled(self, box: QCheckBox) -> None:
+        other = self.include_bits if box is self.include_bytes else self.include_bytes
+        if not box.isChecked() and not other.isChecked():
+            box.blockSignals(True)
+            box.setChecked(True)
+            box.blockSignals(False)
+        self.main_window.update_column_visibility()
 
     def clear(self) -> None:
         self.main_window.clear_noise_filter()
@@ -108,6 +129,9 @@ class CANFrame:
     row: int
     noise_filter: List[bool]
     event_identifier: List[bool]
+    noise_bits: List[bool]
+    event_bits: List[bool]
+
 
     # typical can frame data
     time: float
@@ -127,11 +151,16 @@ class MainWindow(QMainWindow):
         self.running_event_identifier: bool = False
         self.initial_timestamp: float = 0.0
 
-        self.table: QTableWidget = QTableWidget(0, 14)
+        # 21 columns: 5 meta + 8 bytes (D1..D8) + 8 bit columns (D1 bits..D8 bits)
+        self.table: QTableWidget = QTableWidget(0, 21)
         self.table.setAlternatingRowColors(True)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setHorizontalHeaderLabels(
-            ["Time Stamp", "ID", "Extended", "Count", "Length", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "Bits (64)"]
+            [
+                "Time Stamp", "ID", "Extended", "Count", "Length",
+                "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8",
+                "D1 bits", "D2 bits", "D3 bits", "D4 bits", "D5 bits", "D6 bits", "D7 bits", "D8 bits"
+            ]
         )
         self.table.resizeColumnsToContents()
         self.setCentralWidget(self.table)
@@ -143,9 +172,20 @@ class MainWindow(QMainWindow):
         self.inspector = InspectorWidget(self)
         dock = QDockWidget("Inspector", self)
         dock.setWidget(self.inspector)
-
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, dock)
 
+        self.update_column_visibility()
+
+    def update_column_visibility(self) -> None:
+        # bytes: columns 5..12 (D1–D8)
+        show_bytes = self.inspector.include_bytes.isChecked()
+        for col in range(5, 13):
+            self.table.setColumnHidden(col, not show_bytes)
+
+        # bits: columns 13..20 (D1 bits–D8 bits)
+        show_bits = self.inspector.include_bits.isChecked()
+        for col in range(13, 21):
+            self.table.setColumnHidden(col, not show_bits)
 
     def update_table(self, msg: Message) -> None:
         can_id: int = msg.arbitration_id
@@ -155,7 +195,6 @@ class MainWindow(QMainWindow):
 
         self.inspector.elapsed_time_label.setText(f"Elapsed time: {msg.timestamp - self.initial_timestamp:.1f} s")
 
-        # todo: optimize?
         if can_id in self.can_frames:
             row = self.can_frames[can_id].row
             count = self.can_frames[can_id].cnt + 1
@@ -179,7 +218,18 @@ class MainWindow(QMainWindow):
             row = self.table.rowCount()
             count = 1
 
-            self.can_frames[can_id] = CANFrame(row, [False] * msg.dlc, [False] * msg.dlc, msg.timestamp, msg.is_extended_id, count, msg.dlc, msg.data)
+            self.can_frames[can_id] = CANFrame(
+                row,
+                [False] * msg.dlc,     # noise_filter (bytes)
+                [False] * msg.dlc,     # event_identifier (bytes)
+                [False] * 64,          # noise_bits
+                [False] * 64,          # event_bits
+                msg.timestamp,
+                msg.is_extended_id,
+                count,
+                msg.dlc,
+                msg.data
+            )
             self.table.insertRow(row)
 
         self.table.setItem(row, 0, QTableWidgetItem(f"{msg.timestamp:.0f}"))
@@ -188,6 +238,7 @@ class MainWindow(QMainWindow):
         self.table.setItem(row, 3, QTableWidgetItem(str(count)))
         self.table.setItem(row, 4, QTableWidgetItem(str(msg.dlc)))
 
+        # D1..D8
         for i in range(min(len(msg.data), 8)):
             item = QTableWidgetItem(f"{msg.data[i]:02X}")
             if self.can_frames[can_id].noise_filter[i] == True:
@@ -196,11 +247,13 @@ class MainWindow(QMainWindow):
                 item.setForeground(QBrush(QColor("blue")))
             self.table.setItem(row, i + 5, item)
 
-        # Build a 64-bit binary string
-        bit_string = "".join(f"{byte:08b} " for byte in msg.data[:8])
-
-        # Show in final column (column index 13)
-        self.table.setItem(row, 13, QTableWidgetItem(bit_string))
+        # D1 bits .. D8 bits (columns 13..20)
+        for i in range(8):
+            if i < len(msg.data):
+                bits = f"{msg.data[i]:08b}"  # MSB..LSB
+            else:
+                bits = ""
+            self.table.setItem(row, 13 + i, QTableWidgetItem(bits))
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.reader.stop()
@@ -226,6 +279,7 @@ class MainWindow(QMainWindow):
     def clear_event_identifier(self) -> None:
         for can_frame in self.can_frames.values():
             can_frame.event_identifier = [False] * can_frame.len
+
 
 
 if __name__ == "__main__":

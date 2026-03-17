@@ -1,0 +1,299 @@
+event,ID,data_byte,byte_hex,count
+Hazard lights,0020,1,0F,208
+Hazard lights,0020,8,06,29
+Hazard lights,0020,8,0E,178
+Hazard lights,0020,8,0F,243
+Hazard lights,0020,8,26,6
+Hazard lights,0020,8,2E,68
+Hazard lights,0020,8,2F,38
+Hazard lights,0050,6,C4,3
+Hazard lights,0050,6,C5,1
+Hazard lights,0198,3,90,3
+Hazard lights,0198,3,99,2
+Hazard lights,0198,6,C5,1
+Hazard lights,0380,1,01,112
+Hazard lights,0380,2,F4,112
+Hazard lights,0380,3,01,112
+Hazard lights,0380,4,2C,112
+Hazard lights,05AC,3,53,2
+Hazard lights,05AC,4,15,2
+Hazard lights,05AC,4,1E,2
+Hazard lights,05AC,4,57,2
+Hazard lights,05AC,4,60,2
+Hazard lights,05AC,4,90,2
+Hazard lights,05AC,4,99,2
+Hazard lights,05AC,4,A2,2
+Hazard lights,05AC,5,0A,2
+Hazard lights,05AC,5,0B,2
+Hazard lights,05AC,5,0E,2
+Hazard lights,05AC,5,0F,2
+Hazard lights,05AC,5,10,2
+Hazard lights,05AC,5,11,2
+Footbrake,0033,3,06,31
+Footbrake,0033,3,07,217
+Footbrake,0033,3,16,1
+Footbrake,0033,3,17,7
+Footbrake,0033,4,8A,224
+Footbrake,0033,4,C1,32
+Footbrake,0053,1,05,13
+Footbrake,012B,2,10,1
+Footbrake,012B,2,43,1
+Footbrake,012B,2,55,1
+Footbrake,012B,2,64,1
+Footbrake,012B,2,91,2
+Footbrake,012B,2,B6,2
+Footbrake,012B,2,DE,1
+Footbrake,012B,2,F9,1
+Footbrake,012B,3,0E,1
+Footbrake,012B,3,2F,1
+Footbrake,012B,4,0F,1
+Footbrake,012B,4,7C,1
+Footbrake,0198,3,8E,2
+Footbrake,05AC,3,5B,2
+Footbrake,05AC,4,30,2
+Footbrake,05AC,4,39,2
+Footbrake,05AC,4,72,2
+Footbrake,05AC,4,7B,2
+Footbrake,05AC,5,17,2
+Footbrake,05AC,5,18,2
+Footbrake,05AC,5,19,2
+Footbrake,05AC,5,1A,2
+Footbrake,05AC,5,1B,2
+Footbrake,05AC,5,1C,2
+Footbrake,05AC,5,1D,2
+Park brake,012B,2,0E,1
+Park brake,012B,2,0F,1
+Park brake,012B,2,1B,1
+Park brake,012B,2,29,1
+Park brake,012B,2,2C,2
+Park brake,012B,2,2D,1
+Park brake,012B,2,3E,1
+Park brake,012B,2,48,1
+Park brake,012B,2,4B,1
+Park brake,012B,2,54,1
+Park brake,012B,2,56,1
+Park brake,012B,2,5B,1
+Park brake,012B,2,5F,1
+Park brake,012B,2,61,1
+Park brake,012B,2,63,2
+Park brake,012B,2,6A,1
+Park brake,012B,2,81,1
+Park brake,012B,2,8C,1
+Park brake,012B,2,92,1
+Park brake,012B,2,93,1
+Park brake,012B,2,96,3
+Park brake,012B,2,A5,1
+Park brake,012B,2,AE,1
+Park brake,012B,2,B1,1
+Park brake,012B,2,D2,2
+Park brake,012B,2,ED,1
+Park brake,012B,2,FD,1
+Park brake,012B,2,FF,1
+Park brake,012B,4,28,1
+Park brake,012B,4,37,2
+Park brake,012B,4,54,1
+Park brake,012B,4,5F,2
+Park brake,012B,4,75,3
+Park brake,012B,4,8B,2
+Park brake,012B,4,90,2
+Park brake,012B,4,B8,6
+Park brake,012B,4,C2,1
+Park brake,012B,4,D4,4
+Park brake,012B,4,DD,4
+Park brake,012B,4,F6,2
+Park brake,023D,5,E2,1
+Park brake,023D,5,ED,1
+Park brake,0470,6,D0,1
+Park brake,0470,7,5A,1
+Park brake,05AC,4,66,2
+Park brake,05AC,5,30,2
+Park brake,05AC,5,31,2
+Park brake,05AC,5,32,2
+Park brake,05AC,5,33,2
+Park brake,05AC,5,34,2
+Park brake,05AC,5,35,2
+Park brake,05AC,5,36,2
+Park brake,05AC,5,37,2
+Park brake,05AC,5,38,2
+Wipers,0198,6,BC,1
+Wipers,01D0,5,A3,1
+Wipers,01D0,5,AB,2
+Wipers,01D0,5,B9,1
+Wipers,01D0,5,BB,9
+Wipers,05AC,3,31,2
+Wipers,05AC,3,3C,2
+Wipers,05AC,3,6A,2
+Wipers,05AC,3,6E,2
+Wipers,05AC,3,88,2
+Wipers,05AC,4,0E,2
+Wipers,05AC,4,17,2
+Wipers,05AC,4,93,2
+Wipers,05AC,4,9C,2
+Wipers,05AC,4,D5,2
+Wipers,05AC,4,DE,2
+Wipers,05AC,5,42,2
+Wipers,05AC,5,43,2
+Wipers,05AC,5,46,2
+Wipers,05AC,5,47,2
+Wipers,05AC,5,48,2
+Wipers,05AC,5,49,2
+Drivers door,005A,4,25,1
+Drivers door,005A,4,AF,1
+Drivers door,0190,1,3F,2
+Drivers door,0198,6,39,1
+Drivers door,0198,6,56,1
+Drivers door,0370,8,71,1
+Drivers door,0370,8,7B,1
+Drivers door,0370,8,85,1
+Drivers door,0370,8,8F,1
+Drivers door,0370,8,99,1
+Drivers door,0370,8,A3,1
+Drivers door,0370,8,AD,1
+Drivers door,0370,8,B7,1
+Drivers door,0370,8,C1,1
+Drivers door,0370,8,CB,1
+Drivers door,0370,8,D5,1
+Drivers door,05AC,3,15,2
+Drivers door,05AC,3,7C,2
+Drivers door,05AC,3,7F,2
+Drivers door,05AC,3,8C,2
+Drivers door,05AC,3,AA,2
+Drivers door,05AC,3,BA,2
+Drivers door,05AC,3,F6,2
+Drivers door,05AC,4,02,2
+Drivers door,05AC,4,0B,2
+Drivers door,05AC,4,14,2
+Drivers door,05AC,4,44,2
+Drivers door,05AC,4,4D,2
+Drivers door,05AC,4,56,2
+Drivers door,05AC,4,C0,2
+Drivers door,05AC,5,58,2
+Drivers door,05AC,5,59,2
+Drivers door,05AC,5,5A,2
+Drivers door,05AC,5,5B,2
+Drivers door,05AC,5,5C,2
+Drivers door,05AC,5,5D,2
+Drivers door,05AC,5,5E,2
+Drivers door,05AC,5,5F,2
+Drivers door,05AC,5,60,2
+Drivers door,05AC,5,61,2
+Drivers door,05AC,5,62,2
+Passenger door,005A,4,49,1
+Passenger door,023D,5,E0,1
+Passenger door,0370,8,4D,1
+Passenger door,0370,8,57,1
+Passenger door,0370,8,61,1
+Passenger door,0370,8,6B,1
+Passenger door,0370,8,75,1
+Passenger door,0370,8,7F,1
+Passenger door,0370,8,89,1
+Passenger door,0370,8,93,1
+Passenger door,05AC,3,09,2
+Passenger door,05AC,3,27,2
+Passenger door,05AC,3,37,2
+Passenger door,05AC,3,8E,2
+Passenger door,05AC,3,DB,2
+Passenger door,05AC,3,FA,2
+Passenger door,05AC,4,38,2
+Passenger door,05AC,4,41,2
+Passenger door,05AC,4,71,2
+Passenger door,05AC,4,7A,2
+Passenger door,05AC,4,BC,2
+Passenger door,05AC,5,6E,2
+Passenger door,05AC,5,6F,2
+Passenger door,05AC,5,70,2
+Passenger door,05AC,5,71,2
+Passenger door,05AC,5,72,2
+Passenger door,05AC,5,73,2
+Passenger door,05AC,5,74,2
+Passenger door,05AC,5,75,2
+Rear left door,0040,6,15,207
+Rear left door,0040,6,35,17
+Rear left door,005A,4,3D,1
+Rear left door,0370,8,01,1
+Rear left door,0370,8,0B,1
+Rear left door,0370,8,15,1
+Rear left door,0370,8,D9,1
+Rear left door,0370,8,E3,1
+Rear left door,0370,8,ED,1
+Rear left door,0370,8,F7,1
+Rear left door,05AC,3,47,2
+Rear left door,05AC,3,C0,2
+Rear left door,05AC,3,CF,2
+Rear left door,05AC,3,D2,2
+Rear left door,05AC,3,DE,2
+Rear left door,05AC,3,FD,2
+Rear left door,05AC,4,5C,2
+Rear left door,05AC,4,95,2
+Rear left door,05AC,4,9E,2
+Rear left door,05AC,4,C4,2
+Rear left door,05AC,4,FD,2
+Rear left door,05AC,5,7C,2
+Rear left door,05AC,5,7D,2
+Rear left door,05AC,5,7E,2
+Rear left door,05AC,5,7F,2
+Rear left door,05AC,5,80,2
+Rear left door,05AC,5,81,2
+Rear left door,05AC,5,82,2
+Rear right door,005A,4,DF,1
+Rear right door,005A,8,D1,1
+Rear right door,005A,8,D3,1
+Rear right door,00E0,2,50,14
+Rear right door,00E0,2,52,27
+Rear right door,00E0,2,53,7
+Rear right door,00E0,2,D0,7
+Rear right door,00E0,2,D1,6
+Rear right door,00E0,2,D3,7
+Rear right door,05AC,3,12,2
+Rear right door,05AC,3,A5,2
+Rear right door,05AC,3,C1,2
+Rear right door,05AC,3,C3,2
+Rear right door,05AC,4,04,2
+Rear right door,05AC,4,77,2
+Rear right door,05AC,4,80,2
+Rear right door,05AC,4,B9,2
+Rear right door,05AC,4,C2,2
+Rear right door,05AC,4,FB,2
+Rear right door,05AC,5,8D,2
+Rear right door,05AC,5,8E,2
+Rear right door,05AC,5,8F,2
+Rear right door,05AC,5,90,2
+Rear right door,05AC,5,91,2
+Rear right door,05AC,5,92,2
+Drivers seat belt,00B0,8,06,110
+Drivers seat belt,0198,3,CA,1
+Drivers seat belt,0198,6,B1,1
+Drivers seat belt,0198,6,BE,1
+Drivers seat belt,0198,6,C1,1
+Drivers seat belt,05AC,4,31,2
+Drivers seat belt,05AC,4,3A,2
+Drivers seat belt,05AC,4,AD,2
+Drivers seat belt,05AC,4,B6,2
+Drivers seat belt,05AC,4,EF,2
+Drivers seat belt,05AC,4,F8,2
+Drivers seat belt,05AC,5,A4,2
+Drivers seat belt,05AC,5,A5,2
+Drivers seat belt,05AC,5,A6,2
+Drivers seat belt,05AC,5,A7,2
+Drivers seat belt,05AC,5,A8,2
+Drivers seat belt,05AC,5,A9,2
+Drivers seat belt,05AC,5,AA,2
+Drivers seat belt,05AC,5,AB,2
+Drivers seat belt,05AC,5,AC,2
+Front Passenger seat belt,00B0,6,8E,66
+Front Passenger seat belt,0198,6,33,1
+Front Passenger seat belt,0198,6,3B,1
+Front Passenger seat belt,0198,6,43,1
+Front Passenger seat belt,0198,6,59,1
+Front Passenger seat belt,05AC,3,20,2
+Front Passenger seat belt,05AC,3,84,2
+Front Passenger seat belt,05AC,4,24,2
+Front Passenger seat belt,05AC,4,2D,2
+Front Passenger seat belt,05AC,4,79,2
+Front Passenger seat belt,05AC,4,F5,2
+Front Passenger seat belt,05AC,5,C5,2
+Front Passenger seat belt,05AC,5,C6,2
+Front Passenger seat belt,05AC,5,C7,2
+Front Passenger seat belt,05AC,5,C8,2
+Front Passenger seat belt,05AC,5,C9,2
+Front Passenger seat belt,05AC,5,CA,2
