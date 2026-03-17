@@ -380,15 +380,26 @@ class MainWindow(QMainWindow):
         self.reader.wait()
         super().closeEvent(event)
 
-    def clear_noise_filter(self) -> None:
-        for f in self.can_frames.values():
-            f.noise_filter = [False] * f.len
-            f.noise_bits = [False] * 64
-
     def clear_event_identifier(self) -> None:
-        for f in self.can_frames.values():
-            f.event_identifier = [False] * f.len
-            f.event_bits = [False] * 64
+        # RENSAR ENBART BYTES
+        for can_frame in self.can_frames.values():
+            can_frame.event_identifier = [False] * can_frame.len
+
+    def clear_event_identifier_bits(self) -> None:
+        # RENSAR ENBART BITS
+        for can_frame in self.can_frames.values():
+            can_frame.event_bits = [False] * 64
+
+    def clear_noise_filter(self) -> None:
+        # RENSAR ENBART BYTES
+        for can_frame in self.can_frames.values():
+            can_frame.noise_filter = [False] * can_frame.len
+
+    def clear_noise_filter_bits(self) -> None:
+        # RENSAR ENBART BITS
+        for can_frame in self.can_frames.values():
+            can_frame.noise_bits = [False] * 64
+
 
 
 
