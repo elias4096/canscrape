@@ -20,6 +20,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+# Links:
+# python-can interfaces:
+# https://python-can.readthedocs.io/en/stable/configuration.html
+
 #CAN_INTERFACE = "pcan"
 #CAN_CHANNEL = "PCAN_USBBUS1"
 

@@ -1,0 +1,17 @@
+{
+    "Hazard lights": {
+        "start_time": 8.7253,
+        "end_time": 8.0952,
+        "can_ids": [
+            408,
+            832
+        ]
+    },
+    "Park brake": {
+        "start_time": 12.405000000000001,
+        "end_time": 10.715,
+        "can_ids": [
+            816
+        ]
+    }
+}
