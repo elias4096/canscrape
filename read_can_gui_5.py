@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
 #CAN_CHANNEL = "PCAN_USBBUS1"
 
 CAN_INTERFACE= "slcan"
-CAN_CHANNEL = "COM9"
+CAN_CHANNEL = "COM3"
 
 CAN_BITRATE = 500_000
 
