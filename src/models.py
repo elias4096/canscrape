@@ -28,16 +28,16 @@ class CANFrame: # Todo: rename to CanFrame
 @dataclass
 class CanFunction: # Todo: rename to CanEvent
     dot: DotWidget
-    start_time: float
-    end_time: float
+    start_index: int
+    end_index: int
     can_ids: List[int]
 
     def to_json(self) -> dict | None:
-            if self.start_time <= 0.0 or self.end_time <= 0.0:
+            if self.start_index <= 0.0 or self.end_index <= 0.0:
                  return None
 
             return {
-                "start_time": self.start_time,
-                "end_time": self.end_time,
+                "start_index": self.start_index,
+                "end_index": self.end_index,
             }
 

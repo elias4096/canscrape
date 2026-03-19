@@ -22,6 +22,7 @@ class MainWindow(QMainWindow):
         self.running_noise2: bool = False
         self.initial_timestamp: float = 0.0
         self.current_timestamp: float = 0.0
+        self.current_message_number: int = 0
         self.csv_path: str = ""
         self.reader: CanReader | None = None
 
@@ -65,6 +66,7 @@ class MainWindow(QMainWindow):
 
     def update_table(self, msg: can.Message):
         can_id = msg.arbitration_id
+        self.current_message_number += 1
 
         if self.initial_timestamp <= 0.0:
             self.initial_timestamp = msg.timestamp

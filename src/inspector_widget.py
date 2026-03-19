@@ -100,7 +100,7 @@ class InspectorWidget(QWidget):
             row = QHBoxLayout()
 
             dot = DotWidget()
-            self.status_dots[label] = CanFunction(dot, 0.0, 0.0, [])
+            self.status_dots[label] = CanFunction(dot, 0, 0, [])
             row.addWidget(dot)
 
             btn = QPushButton(label)
@@ -132,11 +132,11 @@ class InspectorWidget(QWidget):
         if self.main_window.running_noise2:
             self.noise2_button.setText("Stop action detection")
             if self.selected_function:
-                self.status_dots[self.selected_function].end_time = self.main_window.current_timestamp
+                self.status_dots[self.selected_function].start_index = self.main_window.current_message_number
         else:
             self.noise2_button.setText("Start action detection")
             if self.selected_function:
-                self.status_dots[self.selected_function].start_time = self.main_window.current_timestamp
+                self.status_dots[self.selected_function].end_index = self.main_window.current_message_number
 
     def handle_action_click(self, action_name: str) -> None:
         self.selected_function = action_name

@@ -1,14 +1,14 @@
 {
     "Hazard lights": {
-        "start_time": 5.773199999999999,
-        "end_time": 4.925199999999999
+        "start_index": 11128,
+        "end_index": 12876
     },
-    "Footbrake": {
-        "start_time": 7.7509999999999994,
-        "end_time": 7.2618
+    "Wipers": {
+        "start_index": 15006,
+        "end_index": 16180
     },
     "Passenger door": {
-        "start_time": 9.6598,
-        "end_time": 9.1911
+        "start_index": 26940,
+        "end_index": 30819
     }
 }
