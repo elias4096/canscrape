@@ -1,17 +1,14 @@
 {
     "Hazard lights": {
-        "start_time": 8.7253,
-        "end_time": 8.0952,
-        "can_ids": [
-            408,
-            832
-        ]
+        "start_time": 5.773199999999999,
+        "end_time": 4.925199999999999
     },
-    "Park brake": {
-        "start_time": 12.405000000000001,
-        "end_time": 10.715,
-        "can_ids": [
-            816
-        ]
+    "Footbrake": {
+        "start_time": 7.7509999999999994,
+        "end_time": 7.2618
+    },
+    "Passenger door": {
+        "start_time": 9.6598,
+        "end_time": 9.1911
     }
 }

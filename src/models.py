@@ -39,6 +39,5 @@ class CanFunction: # Todo: rename to CanEvent
             return {
                 "start_time": self.start_time,
                 "end_time": self.end_time,
-                "can_ids": self.can_ids,
             }
 
