@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VehicleActionDictionary>
+
+    <Action name="HazardLights">
+        <Instruction1>Turn on hazard lights.</Instruction1>
+        <Delay>10</Delay>
+        <Instruction2>Turn off hazard lights.</Instruction2>
+    </Action>
+
+    <Action name="Footbrake">
+        <Instruction1>Press the footbrake pedal firmly.</Instruction1>
+        <Delay>10</Delay>
+        <Instruction2>Release the footbrake pedal.</Instruction2>
+    </Action>
+
+    <Action name="ParkBrake">
+        <Instruction1>Engage the parking brake.</Instruction1>
+        <Delay>10</Delay>
+        <Instruction2>Disengage the parking brake.</Instruction2>
+    </Action>
+
+    <Action name="Wipers">
+        <Instruction1>Turn on the windshield wipers.</Instruction1>
+        <Delay>10</Delay>
+        <Instruction2>Turn off the windshield wipers.</Instruction2>
+    </Action>
+
+    <Action name="DriversDoor">
+        <Instruction1>Open the driver’s door.</Instruction1>
+        <Delay>10</Delay>
+        <Instruction2>Close the driver’s door.</Instruction2>
+    </Action>
+
+    <Action name="PassengerDoor">
+        <Instruction1>Open the passenger door.</Instruction1>
+        <Delay>10</Delay>
+        <Instruction2>Close the passenger door.</Instruction2>
+    </Action>
+
+    <Action name="RearLeftDoor">
+        <Instruction1>Open the rear left door.</Instruction1>
+        <Delay>10</Delay>
+        <Instruction2>Close the rear left door.</Instruction2>
+    </Action>
+
+    <Action name="RearRightDoor">
+        <Instruction1>Open the rear right door.</Instruction1>
+        <Delay>10</Delay>
+        <Instruction2>Close the rear right door.</Instruction2>
+    </Action>
+
+    <Action name="DriversSeatbelt">
+        <Instruction1>Buckle the driver's seatbelt.</Instruction1>
+        <Delay>10</Delay>
+        <Instruction2>Unbuckle the driver's seatbelt.</Instruction2>
+    </Action>
+
+    <Action name="FrontPassengerSeatbelt">
+        <Instruction1>Buckle the front passenger seatbelt.</Instruction1>
+        <Delay>10</Delay>
+        <Instruction2>Unbuckle the front passenger seatbelt.</Instruction2>
+    </Action>
+
+</VehicleActionDictionary>

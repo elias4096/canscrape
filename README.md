@@ -1,5 +1,11 @@
-# canscrape
+# Thesis project: Can Scrape
 
-To get started:
-1. `pip install python-can`
-2. Install PeakCAN drivers: https://www.peak-system.com/products/hardware/external-pc-interfaces/pcan-usb/
+The goal of this project is to investigate if AI can be used as an effective tool to reverse engineer CAN bus messages. Although the solution developed in this project may not be a complete solution, it provides a solid foundation for future work.
+
+![alt text](images/canscrape.png)
+
+# Requirements:
+
+1. Python 3.14 or later
+1. python-can (pip install)
+1. PeakCAN drivers (https://www.peak-system.com/products/hardware/external-pc-interfaces/pcan-usb/)

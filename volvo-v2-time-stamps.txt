@@ -1,0 +1,10 @@
+Hazard lights                  6       11       IDS:
+Footbrake                      19      22       IDS:
+Park brake                     44      49       IDS: 12B, 470, 050, 370
+Wipers                         62      66       IDS: 501, 1D0, 198
+Drivers door                   84      91       IDS: 035, 038, 050, 040, 501, 350, 190, 0C3, 0C4
+Passenger door                 106     110      IDS: 501, 038, 0E0
+Rear left door                 120     123      IDS: 1B0, 300, 040, 038, 501, 270, 470
+Rear right door                136     140      IDS: 300, 1B0, 270, 470, 501, 038, 0E0, 198
+Drivers seat belt    	       160     165      IDS: 23D, 0B0
+Front Passenger seat belt      192     195      IDS: 270, 300, 185, 0B0
