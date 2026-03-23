@@ -7,5 +7,5 @@ The goal of this project is to investigate if AI can be used as an effective too
 # Requirements:
 
 1. Python 3.14 or later
-1. python-can (pip install)
+1. python-can, numpy, pandas, scikit-learn (pip install)
 1. PeakCAN drivers (https://www.peak-system.com/products/hardware/external-pc-interfaces/pcan-usb/)

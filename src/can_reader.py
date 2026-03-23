@@ -58,7 +58,7 @@ class CanReader(QThread):
                         self.msg_signal.emit(msg)
                         time.sleep(0.00001) # Hardcoded
             except Exception as e:
-                print("Failed to read CSV file:", e)
+                print("Failed to read CSV:", e)
 
     def stop(self):
         self.running = False
