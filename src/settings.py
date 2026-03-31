@@ -6,7 +6,6 @@ from PySide6.QtCore import QObject, Signal
 from can_reader import CanReader
 from models import CanFrame, EventInterval, SimpleCanFrame, TrainingCanFrame
 
-
 class InputMode(Enum):
     Off = 0
     PeakCan = 1
@@ -28,7 +27,6 @@ class Settings(QObject):
         super().__init__()
         # Public
         self.csv_filepath = str()
-        self.iso_csv_filepath = str()
         self.reader: CanReader | None = None
         self.initial_timestamp: float = 0.0
         self.current_timestamp: float = 0.0
@@ -42,7 +40,6 @@ class Settings(QObject):
         self.event_intervals: Dict[str, EventInterval] = {
             "Hazard lights": EventInterval(0, 0, []),
             "Footbrake": EventInterval(0, 0, []),
-            "Park brake": EventInterval(0, 0, []),
             "Wipers": EventInterval(0, 0, []),
             "Drivers door": EventInterval(0, 0, []),
             "Passenger door": EventInterval(0, 0, []),
@@ -51,9 +48,6 @@ class Settings(QObject):
             "Drivers seat belt": EventInterval(0, 0, []),
             "Front Passenger seat belt": EventInterval(0, 0, []),
         }
-
-        self.idle_frames: Dict[str, List[SimpleCanFrame]] = {}
-        self.event_frames: Dict[str, List[SimpleCanFrame]] = {}
 
         # Private
         self._input_mode = InputMode.Off

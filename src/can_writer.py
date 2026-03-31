@@ -37,6 +37,7 @@ def troys_json_export(event_intervals: Dict[str, EventInterval], filename: str):
             "end_index": interval.end_index
         }
         for key, interval in event_intervals.items()
+        if interval.start_index != 0 and interval.end_index != 0
     }
 
     with open(filename, "w") as f:

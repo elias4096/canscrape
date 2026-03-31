@@ -5,7 +5,6 @@ from PySide6.QtWidgets import (
 from can_writer import raw_csv_export, training_csv_export, troys_csv_export, troys_json_export
 from settings import DetectionMode, InputMode, Settings
 
-
 class InspectorWidget(QWidget):
     def __init__(self, settings_model: Settings):
         super().__init__()
@@ -13,11 +12,12 @@ class InspectorWidget(QWidget):
         self.settings = settings_model
         self.vlayout = QVBoxLayout()
 
-        self.csv_label = QLabel(f"{self.settings.csv_filepath}", wordWrap=True)
-        self.csv2_label = QLabel(f"{self.settings.csv_filepath}", wordWrap=True)
+        self.csv_label = QLabel("No CSV loaded...", wordWrap=True)
 
-        self.time_label = QLabel("Time:")
+        self.time_label = QLabel("Time: ---")
+        self.frame_count_label = QLabel("Frame count: ---")
         self.vlayout.addWidget(self.time_label)
+        self.vlayout.addWidget(self.frame_count_label)
 
         self.config_gui()
         self.input_mode_gui()
@@ -99,17 +99,9 @@ class InspectorWidget(QWidget):
         header = QLabel("<b>Isolation forest</b>")
         self.vlayout.addWidget(header)
 
-        hlayout = QHBoxLayout()
-        b0 = QPushButton("Load")
-        hlayout.addWidget(b0)
-        hlayout.addWidget(self.csv2_label)
-        self.vlayout.addLayout(hlayout)
-
-        b0.clicked.connect(self.on_iso_forest_load_csv)
-
         b2 = QPushButton("Run")
-        self.vlayout.addWidget(b2)
         b2.clicked.connect(self.settings.onIsolationForestClicked.emit)
+        self.vlayout.addWidget(b2)
 
     def export_gui(self):
         header = QLabel("<b>Export</b>")
@@ -132,12 +124,6 @@ class InspectorWidget(QWidget):
         if path:
             self.settings.csv_filepath = path
             self.csv_label.setText(f"{self.settings.csv_filepath}")
-
-    def on_iso_forest_load_csv(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Load CSV", "", "CSV Files (*.csv)")
-        if path:
-            self.settings.iso_csv_filepath = path
-            self.csv2_label.setText(f"{self.settings.iso_csv_filepath}")
 
     def on_input_mode_changed(self, id: int):
         if id == 0:
@@ -189,3 +175,4 @@ class InspectorWidget(QWidget):
 
     def update_gui(self):
         self.time_label.setText(f"Time: {(self.settings.current_timestamp - self.settings.initial_timestamp):.3f}")
+        self.frame_count_label.setText(f"Frame count: {self.settings.frame_count}")

@@ -3,6 +3,18 @@ from typing import List
 
 from PySide6.QtWidgets import QLabel
 
+@dataclass
+class CanFrame:
+    time: float
+    cnt: int
+    len: int
+    data: bytearray
+
+    row: int
+    noise_bits: List[List[bool]]
+    event_bits: List[List[bool]]
+    bytes_label: QLabel | None = None
+    bits_label: QLabel | None = None
 
 @dataclass
 class SimpleCanFrame:
@@ -17,20 +29,6 @@ class SimpleCanFrame:
     d6: int
     d7: int
     d8: int
-
-@dataclass
-class CanFrame:
-    time: float
-    ext: bool
-    cnt: int
-    len: int
-    data: bytearray
-
-    row: int
-    noise_bits: List[List[bool]]
-    event_bits: List[List[bool]]
-    bytes_label: QLabel | None = None
-    bits_label: QLabel | None = None
 
 @dataclass
 class TrainingCanFrame:

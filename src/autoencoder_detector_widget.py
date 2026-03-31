@@ -1,0 +1,81 @@
+from PySide6.QtWidgets import (
+    QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget, QSplitter
+)
+from PySide6.QtCore import Qt
+
+from autoencoder_detector import likelihood_from_frames
+from settings import Settings
+
+
+class AutoencoderDetectorWidget(QWidget):
+    def __init__(self, settings_model: Settings):
+        super().__init__()
+
+        self.settings = settings_model
+        self.settings.detectionModeChanged.connect(self.on_detection_mode_changed)
+        self.settings.onIsolationForestClicked.connect(self.on_isolation_forest_clicked)
+        self.settings.onEventClicked.connect(self.on_event_clicked)
+
+        vlayout = QVBoxLayout()
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+
+        #headers = ["Time Stamp","ID","D1","D2","D3","D4","D5","D6","D7","D8","Byte Sum","Byte Entropy","Iso Score","Likelihood"]
+        headers = ["ID","Index in event","Recon error","Likelihood"]
+        self.table_left = QTableWidget(0, len(headers))
+        self.table_left.setHorizontalHeaderLabels(headers)
+        self.table_left.setAlternatingRowColors(True)
+        self.table_left.resizeColumnsToContents()
+        self.table_left.horizontalHeader().setStretchLastSection(True)
+        self.table_left.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+
+        self.table_right = QTableWidget(0, 1)
+        self.table_right.setHorizontalHeaderLabels([
+            "ID"
+        ])
+        self.table_right.setAlternatingRowColors(True)
+        self.table_right.resizeColumnsToContents()
+        self.table_right.horizontalHeader().setStretchLastSection(True)
+        self.table_right.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+
+        splitter.addWidget(self.table_left)
+        splitter.addWidget(self.table_right)
+
+        vlayout.addWidget(splitter)
+        self.setLayout(vlayout)
+
+    def update_right_table(self):
+        row = 0
+        self.table_right.setRowCount(0)
+
+        if self.settings.selected_event not in self.settings.event_intervals:
+            return
+
+        interval = self.settings.event_intervals[self.settings.selected_event]
+        for id in interval.interesting_ids:
+            self.table_right.insertRow(row)
+            self.table_right.setItem(row, 0, QTableWidgetItem(f"{id:03X}"))
+            row += 1
+
+    def on_detection_mode_changed(self):
+        self.update_right_table()
+
+    def on_isolation_forest_clicked(self):
+        interval = self.settings.event_intervals[self.settings.selected_event]
+        event_frames = self.settings.all_frames[interval.start_index:interval.end_index]
+
+        data = likelihood_from_frames(
+            "volvo-idle-15-ml.csv",
+            event_frames,
+            interval.interesting_ids)
+        
+        rows = data.values.tolist()
+        self.table_left.setRowCount(len(rows))
+
+        for i, row in enumerate(rows):
+            self.table_left.setItem(i, 0, QTableWidgetItem(f"{int(row[0]):03X}"))
+            self.table_left.setItem(i, 1, QTableWidgetItem(f"{row[1]:.0f}"))
+            self.table_left.setItem(i, 2, QTableWidgetItem(f"{row[2]:.4f}"))
+            self.table_left.setItem(i, 3, QTableWidgetItem(f"{row[3]:.4f}"))
+
+    def on_event_clicked(self, event_name: str):
+        self.update_right_table()
