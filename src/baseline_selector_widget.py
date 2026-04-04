@@ -29,9 +29,6 @@ class BaselineSelectorWidget(QWidget):
         self._build_ui()
         self._update_state()
 
-    # ------------------------------------------------------------------ #
-    #  UI                                                                  #
-    # ------------------------------------------------------------------ #
     def _build_ui(self):
         root = QVBoxLayout(self)
         root.setSpacing(20)
@@ -47,7 +44,6 @@ class BaselineSelectorWidget(QWidget):
 
         root.addWidget(self._divider())
 
-        # --- Option 1: prerecorded file ---
         self.radio_existing = QRadioButton("Use a prerecorded baseline file")
         self.radio_existing.setFont(QFont("Segoe UI", 10))
         self.radio_existing.toggled.connect(self._on_option_changed)
@@ -70,7 +66,6 @@ class BaselineSelectorWidget(QWidget):
         h1.addWidget(self.browse_btn)
         root.addWidget(self.existing_row)
 
-        # --- Option 2: record new ---
         self.radio_record = QRadioButton("Record a new baseline file")
         self.radio_record.setFont(QFont("Segoe UI", 10))
         self.radio_record.toggled.connect(self._on_option_changed)
@@ -136,9 +131,6 @@ class BaselineSelectorWidget(QWidget):
         line.setStyleSheet("color: #333;")
         return line
 
-    # ------------------------------------------------------------------ #
-    #  Logic                                                               #
-    # ------------------------------------------------------------------ #
     def _on_option_changed(self):
         self.selected_file = None
         self.recording_done = False
@@ -161,7 +153,7 @@ class BaselineSelectorWidget(QWidget):
         self._update_state()
 
     def _on_input_mode_clicked(self, id: int):
-        if id == 2:  # Csv Replay — välj fil direkt
+        if id == 2:
             path, _ = QFileDialog.getOpenFileName(
                 self, "Select CAN CSV file", "", "CSV files (*.csv)"
             )
@@ -176,7 +168,7 @@ class BaselineSelectorWidget(QWidget):
             mode_id = self.input_mode_group.checkedId()
             modes = ["PeakCan", "SerialPort", "CsvReplay"]
             self.recording_start.emit(modes[mode_id], self._csv_replay_path)
-            self.record_btn.setText("⏹  Stop & Save")
+            self.record_btn.setText("⏹  Stop Recording")
             self.record_status.setText("Recording…")
             self.record_status.setStyleSheet("color: #e06c6c;")
             self.recording_done = False
@@ -209,5 +201,4 @@ class BaselineSelectorWidget(QWidget):
             self.settings.baseline_is_recording = False
         else:
             self.settings.baseline_is_recording = True
-        self.recording_start.emit("Clear", "")
         self.baseline_done.emit(self.result_path)

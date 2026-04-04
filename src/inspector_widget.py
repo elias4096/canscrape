@@ -1,15 +1,17 @@
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QFileDialog, QHBoxLayout, QInputDialog, QLabel, QPushButton, QButtonGroup, QVBoxLayout, QWidget
 )
 
 from os.path import basename
-
 import serial.tools.list_ports
 
-from can_writer import raw_csv_export, event_indexes_json_export
+from can_writer import raw_csv_export, event_indexes_json_export, baseline_export_copy
 from settings import DetectionMode, InputMode, Settings
 
+
 class InspectorWidget(QWidget):
+    run_analysis = Signal()
     def __init__(self, settings_model: Settings):
         super().__init__()
         
@@ -35,7 +37,6 @@ class InspectorWidget(QWidget):
         header = QLabel("<b>Config</b>")
         self.vlayout.addWidget(header)
 
-        # --- Baseline status ---
         filename = basename(self.settings.baseline_path) if self.settings.baseline_path else "unknown"
         label = "Saved as" if self.settings.baseline_is_recording else "Loaded from"
         status_label = QLabel(f"✔ Baseline configured\n{label}: {filename}")
@@ -51,7 +52,6 @@ class InspectorWidget(QWidget):
         """)
         self.vlayout.addWidget(status_label)
 
-        # --- Csv replay indikator ---
         self.csv_label = QLabel("No CSV loaded", wordWrap=True)
         self.csv_label.setStyleSheet("color: #aaa; font-style: italic;")
         self.csv_label.hide()
@@ -79,7 +79,7 @@ class InspectorWidget(QWidget):
         header = QLabel("<b>Detection mode</b>")
         self.vlayout.addWidget(header)
 
-        names = ["Off", "On"]
+        names = ["On", "Off"]
         group = QButtonGroup(self)
         hlayout = QHBoxLayout()
 
@@ -90,7 +90,7 @@ class InspectorWidget(QWidget):
             hlayout.addWidget(b)
 
         group.idClicked.connect(self.on_detection_mode_changed)
-        group.buttons()[0].setChecked(True)
+        group.button(1).setChecked(True)  # id=1 = "Off"
         self.vlayout.addLayout(hlayout)
 
     def event_selection_gui(self):
@@ -122,17 +122,26 @@ class InspectorWidget(QWidget):
         header = QLabel("<b>Export</b>")
         self.vlayout.addWidget(header)
 
-        b = QPushButton("Export")
-        b.clicked.connect(self.on_export_clicked)
-        self.vlayout.addWidget(b)
+        self.export_btn = QPushButton("Export")
+        self.export_btn.setEnabled(False)
+        self.export_btn.clicked.connect(self.on_export_clicked)
+        self.vlayout.addWidget(self.export_btn)
+
+        self.run_analysis_btn = QPushButton("Run analysis")
+        self.run_analysis_btn.setEnabled(False)
+        self.run_analysis_btn.clicked.connect(self.on_run_analysis_clicked)
+        self.vlayout.addWidget(self.run_analysis_btn)
 
     def on_input_mode_changed(self, id: int):
         if id == 0:
             self.settings.setInputMode(InputMode.Off)
             self.csv_label.hide()
+            self.export_btn.setEnabled(True)
         elif id == 1:
             self.settings.setInputMode(InputMode.PeakCan)
             self.csv_label.hide()
+            self.export_btn.setEnabled(False)
+            self.run_analysis_btn.setEnabled(False)
         elif id == 2:
             ports = [p.device for p in serial.tools.list_ports.comports()]
             if not ports:
@@ -144,6 +153,8 @@ class InspectorWidget(QWidget):
                 self.csv_label.setStyleSheet("color: #ccc; font-style: normal;")
                 self.csv_label.show()
                 self.settings.setInputMode(InputMode.SerialPort)
+                self.export_btn.setEnabled(False)
+                self.run_analysis_btn.setEnabled(False)
             else:
                 return
         elif id == 3:
@@ -154,6 +165,8 @@ class InspectorWidget(QWidget):
                 self.csv_label.setStyleSheet("color: #ccc; font-style: normal;")
                 self.csv_label.show()
                 self.settings.setInputMode(InputMode.CsvReplay)
+                self.export_btn.setEnabled(False)
+                self.run_analysis_btn.setEnabled(False)
             else:
                 return
 
@@ -162,21 +175,20 @@ class InspectorWidget(QWidget):
             self.settings.reader.start()
 
     def on_detection_mode_changed(self, id: int):
-        if id == 1 and self.settings.detectionMode() != DetectionMode.Event:
+        if id == 0 and self.settings.detectionMode() != DetectionMode.Event:
+            # On clicked → starta event-inspelning
             self.settings.event_intervals[self.settings.selected_event].start_index = self.settings.frame_count
             self.settings.reset_event_bits()
-        elif id != 1 and self.settings.detectionMode() == DetectionMode.Event:
+            self.settings.setDetectionMode(DetectionMode.Event)
+        elif id == 1 and self.settings.detectionMode() == DetectionMode.Event:
+            # Off clicked → avsluta event-inspelning
             self.settings.event_intervals[self.settings.selected_event].end_index = self.settings.frame_count
             for can_id, frame in self.settings.frames.items():
                 for byte_bits in frame.event_bits:
                     if any(byte_bits):
                         self.settings.event_intervals[self.settings.selected_event].interesting_ids.append(can_id)
                         break
-
-        if id == 0:
             self.settings.setDetectionMode(DetectionMode.Off)
-        elif id == 1:
-            self.settings.setDetectionMode(DetectionMode.Event)
 
     def on_event_clicked(self, button: QPushButton):
         self.settings.selected_event = button.text()
@@ -185,8 +197,21 @@ class InspectorWidget(QWidget):
     def on_export_clicked(self):
         path = raw_csv_export(self.settings.all_frames, "src/output/raw-export.csv")
         print(f"Exported to: {path}")
+        self.settings.last_export_raw = path
+
         path = event_indexes_json_export(self.settings.event_intervals, "src/output/event_indexes.json")
         print(f"Exported to: {path}")
+        self.settings.last_export_json = path
+
+        if self.settings.baseline_path:
+            path = baseline_export_copy(self.settings.baseline_path, "src/output")
+            print(f"Exported to: {path}")
+            self.settings.last_export_baseline = path
+
+        self.run_analysis_btn.setEnabled(True)
+
+    def on_run_analysis_clicked(self):
+        self.run_analysis.emit()
 
     def update_gui(self):
         self.time_label.setText(f"Time: {(self.settings.current_timestamp - self.settings.initial_timestamp):.3f}")

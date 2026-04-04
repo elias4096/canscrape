@@ -22,6 +22,7 @@ class Settings(QObject):
     onIsolationForestClicked = Signal()
     onEventClicked = Signal(str)
     clearData = Signal()
+    loadCsvSnapshot = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -34,6 +35,9 @@ class Settings(QObject):
         self.reader: CanReader | None = None
         self.initial_timestamp: float = 0.0
         self.current_timestamp: float = 0.0
+        self.last_export_baseline: str = ""
+        self.last_export_raw: str = ""
+        self.last_export_json: str = ""
         # Todo: rename to current_frame_index
         self.frame_count: int = 0
         self.frames: Dict[int, CanFrame] = {}
@@ -71,7 +75,7 @@ class Settings(QObject):
 
     def detectionMode(self):
         return self._detection_mode
-    
+
     def reset_event_bits(self):
         for frame in self.frames.values():
             frame.event_bits = [[False] * 8 for _ in range(frame.len)]

@@ -9,7 +9,12 @@ Flöde:
   5. Filtrera bort bitar som inte ändrats i BÅDA zonerna (om två finns)
      och inte är exklusiva för ETT event
   6. Skriv ut exklusiva bitar per event
+
+Användning:
+  python main.py <baseline_file> <event_file> <event_json>
 """
+
+import sys
 
 from analysis import get_potential_event_bits
 from split_into_sections import (
@@ -23,10 +28,14 @@ MASK_64 = (1 << 64) - 1
 # ---------------------------------------------------------------------------
 # Konfiguration
 # ---------------------------------------------------------------------------
-folder = "input"
-baseline_file = f"{folder}/baseline-export.csv"
-event_file    = f"{folder}/raw-export.csv"
-event_json    = f"{folder}/event_indexes.json"
+
+if len(sys.argv) != 4:
+    print("Användning: python main.py <baseline_file> <event_file> <event_json>")
+    sys.exit(1)
+
+baseline_file = sys.argv[1]
+event_file    = sys.argv[2]
+event_json    = sys.argv[3]
 
 # ---------------------------------------------------------------------------
 # Hjälpfunktioner

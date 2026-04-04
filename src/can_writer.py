@@ -1,18 +1,13 @@
 import csv
 import json
 import os
+import shutil
 from typing import Dict, List
 
 from models import EventInterval, SimpleCanFrame
 
-def get_unique_filepath(path: str) -> str:
-    """
-    Returns a unique file path. If the file already exists,
-    appends _2, _3, ... before the file extension.
 
-    Example:
-        data.csv -> data_2.csv -> data_3.csv
-    """
+def get_unique_filepath(path: str) -> str:
     directory, filename = os.path.split(path)
     name, extension = os.path.splitext(filename)
 
@@ -25,10 +20,10 @@ def get_unique_filepath(path: str) -> str:
 
     return candidate
 
+
 def baseline_csv_export(frames: List[SimpleCanFrame], filename: str):
     filename = get_unique_filepath(filename)
 
-    # ID,D1,D2,D3,D4,D5,D6,D7,D8
     header = ["id","d1","d2","d3","d4","d5","d6","d7","d8"]
 
     with open(filename, "w", newline="") as f:
@@ -40,10 +35,10 @@ def baseline_csv_export(frames: List[SimpleCanFrame], filename: str):
 
     return filename
 
+
 def raw_csv_export(frames: List[SimpleCanFrame], filename: str):
     filename = get_unique_filepath(filename)
 
-    # Time Stamp,ID,Extended,Dir,Bus,LEN,D1,D2,D3,D4,D5,D6,D7,D8
     header = ["Time Stamp","ID","Extended","Dir","Bus","LEN","D1","D2","D3","D4","D5","D6","D7","D8"]
 
     with open(filename, "w", newline="") as f:
@@ -56,6 +51,7 @@ def raw_csv_export(frames: List[SimpleCanFrame], filename: str):
                              f"{frame.d5:02X}", f"{frame.d6:02X}", f"{frame.d7:02X}", f"{frame.d8:02X}"])
 
     return filename
+
 
 def event_indexes_json_export(event_intervals: Dict[str, EventInterval], filename: str):
     filename = get_unique_filepath(filename)
@@ -73,3 +69,10 @@ def event_indexes_json_export(event_intervals: Dict[str, EventInterval], filenam
         json.dump(serializable, f, indent=4)
 
     return filename
+
+
+def baseline_export_copy(src_path: str, output_dir: str) -> str:
+    filename = os.path.basename(src_path)
+    dest = os.path.join(output_dir, filename)
+    shutil.copy2(src_path, dest)
+    return dest
