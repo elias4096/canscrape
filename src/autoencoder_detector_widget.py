@@ -64,7 +64,7 @@ class AutoencoderDetectorWidget(QWidget):
         event_frames = self.settings.all_frames[interval.start_index:interval.end_index]
 
         data = likelihood_from_frames(
-            "volvo-idle-15-ml.csv",
+            "baseline-export.csv",
             event_frames,
             interval.interesting_ids)
         

@@ -4,7 +4,7 @@ from typing import Dict, List
 from PySide6.QtCore import QObject, Signal
 
 from can_reader import CanReader
-from models import CanFrame, EventInterval, SimpleCanFrame, TrainingCanFrame
+from models import CanFrame, EventInterval, SimpleCanFrame
 
 class InputMode(Enum):
     Off = 0
@@ -14,19 +14,23 @@ class InputMode(Enum):
 
 class DetectionMode(Enum):
     Off = 0
-    Noise = 1
-    Event = 2
+    Event = 1
 
 class Settings(QObject):
     inputModeChanged = Signal(InputMode)
     detectionModeChanged = Signal(DetectionMode)
     onIsolationForestClicked = Signal()
     onEventClicked = Signal(str)
+    clearData = Signal()
 
     def __init__(self):
         super().__init__()
         # Public
         self.csv_filepath = str()
+        self.serial_port: str = "COM9"
+        self.baseline_path = str()
+        self.baseline_is_recording: bool = False
+        self.baseline_noise_bits: dict = {}  # { "ID": [bitnummer, ...] }
         self.reader: CanReader | None = None
         self.initial_timestamp: float = 0.0
         self.current_timestamp: float = 0.0
@@ -34,7 +38,6 @@ class Settings(QObject):
         self.frame_count: int = 0
         self.frames: Dict[int, CanFrame] = {}
         self.all_frames: List[SimpleCanFrame] = []
-        self.training_frames: List[TrainingCanFrame] = []
 
         self.selected_event = str()
         self.event_intervals: Dict[str, EventInterval] = {

@@ -131,7 +131,7 @@ def likelihood_from_error(err):
 # ============================================================
 
 def likelihood_from_frames(
-    training_csv: str,
+    baseline_csv: str,
     event_frames: List[SimpleCanFrame],
     allowed_ids: List[int],
     epochs: int = 20
@@ -143,7 +143,7 @@ def likelihood_from_frames(
     """
 
     # Load idle CSV
-    idle_df = pd.read_csv(training_csv)
+    idle_df = pd.read_csv(baseline_csv)
 
     byte_cols = ["d1","d2","d3","d4","d5","d6","d7","d8"]
     cols = ["id"] + byte_cols

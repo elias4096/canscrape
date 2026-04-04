@@ -64,7 +64,7 @@ class ResultWidget(QWidget):
         event_frames = self.settings.all_frames[interval.start_index:interval.end_index]
 
         data = likelihood_from_frames(
-            "output/training-export.csv",
+            "src/output/baseline-export.csv",
             event_frames,
             interval.interesting_ids)
         

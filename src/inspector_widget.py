@@ -1,8 +1,12 @@
 from PySide6.QtWidgets import (
-    QFileDialog, QHBoxLayout, QLabel, QPushButton, QButtonGroup, QVBoxLayout, QWidget
+    QFileDialog, QHBoxLayout, QInputDialog, QLabel, QPushButton, QButtonGroup, QVBoxLayout, QWidget
 )
 
-from can_writer import raw_csv_export, training_csv_export, troys_csv_export, troys_json_export
+from os.path import basename
+
+import serial.tools.list_ports
+
+from can_writer import raw_csv_export, event_indexes_json_export
 from settings import DetectionMode, InputMode, Settings
 
 class InspectorWidget(QWidget):
@@ -11,8 +15,6 @@ class InspectorWidget(QWidget):
         
         self.settings = settings_model
         self.vlayout = QVBoxLayout()
-
-        self.csv_label = QLabel("No CSV loaded...", wordWrap=True)
 
         self.time_label = QLabel("Time: ---")
         self.frame_count_label = QLabel("Frame count: ---")
@@ -33,14 +35,27 @@ class InspectorWidget(QWidget):
         header = QLabel("<b>Config</b>")
         self.vlayout.addWidget(header)
 
-        hlayout = QHBoxLayout()
+        # --- Baseline status ---
+        filename = basename(self.settings.baseline_path) if self.settings.baseline_path else "unknown"
+        label = "Saved as" if self.settings.baseline_is_recording else "Loaded from"
+        status_label = QLabel(f"✔ Baseline configured\n{label}: {filename}")
+        status_label.setStyleSheet("""
+            QLabel {
+                color: #15803d;
+                background-color: #e6f9ec;
+                border: 1px solid #b6e2c6;
+                border-radius: 8px;
+                padding: 6px 10px;
+                font-weight: 500;
+            }
+        """)
+        self.vlayout.addWidget(status_label)
 
-        button = QPushButton("Load Csv")
-        button.clicked.connect(self.on_load_csv_clicked)
-
-        hlayout.addWidget(button)
-        hlayout.addWidget(self.csv_label)
-        self.vlayout.addLayout(hlayout)
+        # --- Csv replay indikator ---
+        self.csv_label = QLabel("No CSV loaded", wordWrap=True)
+        self.csv_label.setStyleSheet("color: #aaa; font-style: italic;")
+        self.csv_label.hide()
+        self.vlayout.addWidget(self.csv_label)
 
     def input_mode_gui(self):
         header = QLabel("<b>Input mode</b>")
@@ -64,7 +79,7 @@ class InspectorWidget(QWidget):
         header = QLabel("<b>Detection mode</b>")
         self.vlayout.addWidget(header)
 
-        names = ["Off", "Noise", "Event"]
+        names = ["Off", "On"]
         group = QButtonGroup(self)
         hlayout = QHBoxLayout()
 
@@ -107,45 +122,51 @@ class InspectorWidget(QWidget):
         header = QLabel("<b>Export</b>")
         self.vlayout.addWidget(header)
 
-        hlayout = QHBoxLayout()
-        b0 = QPushButton("Raw export")
-        b1 = QPushButton("Troy's export")
-        b2 = QPushButton("Training export")
-        b0.clicked.connect(self.on_raw_csv_export_clicked)
-        b1.clicked.connect(self.on_troys_csv_export_clicked)
-        b2.clicked.connect(self.on_training_csv_export_clicked)
-        hlayout.addWidget(b0)
-        hlayout.addWidget(b1)
-        hlayout.addWidget(b2)
-        self.vlayout.addLayout(hlayout)
-
-    def on_load_csv_clicked(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Load CSV", "", "CSV Files (*.csv)")
-        if path:
-            self.settings.csv_filepath = path
-            self.csv_label.setText(f"{self.settings.csv_filepath}")
+        b = QPushButton("Export")
+        b.clicked.connect(self.on_export_clicked)
+        self.vlayout.addWidget(b)
 
     def on_input_mode_changed(self, id: int):
         if id == 0:
             self.settings.setInputMode(InputMode.Off)
+            self.csv_label.hide()
         elif id == 1:
             self.settings.setInputMode(InputMode.PeakCan)
+            self.csv_label.hide()
         elif id == 2:
-            self.settings.setInputMode(InputMode.SerialPort)
+            ports = [p.device for p in serial.tools.list_ports.comports()]
+            if not ports:
+                ports = ["No ports found"]
+            port, ok = QInputDialog.getItem(self, "Select Serial Port", "Port:", ports, 0, False)
+            if ok and port != "No ports found":
+                self.settings.serial_port = port
+                self.csv_label.setText(f"▶ {port}")
+                self.csv_label.setStyleSheet("color: #ccc; font-style: normal;")
+                self.csv_label.show()
+                self.settings.setInputMode(InputMode.SerialPort)
+            else:
+                return
         elif id == 3:
-            self.settings.setInputMode(InputMode.CsvReplay)
-    
+            path, _ = QFileDialog.getOpenFileName(self, "Select CAN CSV file", "", "CSV Files (*.csv)")
+            if path:
+                self.settings.csv_filepath = path
+                self.csv_label.setText(f"▶ {path.split('/')[-1]}")
+                self.csv_label.setStyleSheet("color: #ccc; font-style: normal;")
+                self.csv_label.show()
+                self.settings.setInputMode(InputMode.CsvReplay)
+            else:
+                return
+
         if self.settings.reader:
             self.settings.reader.msg_signal.connect(self.update_gui)
             self.settings.reader.start()
 
     def on_detection_mode_changed(self, id: int):
-        if id == 2 and self.settings.detectionMode() != DetectionMode.Event:
+        if id == 1 and self.settings.detectionMode() != DetectionMode.Event:
             self.settings.event_intervals[self.settings.selected_event].start_index = self.settings.frame_count
             self.settings.reset_event_bits()
-        elif id != 2 and self.settings.detectionMode() == DetectionMode.Event:
+        elif id != 1 and self.settings.detectionMode() == DetectionMode.Event:
             self.settings.event_intervals[self.settings.selected_event].end_index = self.settings.frame_count
-            # Todo: Inspector should not handle this, I think.
             for can_id, frame in self.settings.frames.items():
                 for byte_bits in frame.event_bits:
                     if any(byte_bits):
@@ -155,23 +176,17 @@ class InspectorWidget(QWidget):
         if id == 0:
             self.settings.setDetectionMode(DetectionMode.Off)
         elif id == 1:
-            self.settings.setDetectionMode(DetectionMode.Noise)
-        elif id == 2:
             self.settings.setDetectionMode(DetectionMode.Event)
 
     def on_event_clicked(self, button: QPushButton):
         self.settings.selected_event = button.text()
         self.settings.onEventClicked.emit(button.text())
 
-    def on_raw_csv_export_clicked(self):
-        raw_csv_export(self.settings.all_frames, "output/raw-export.csv")
-
-    def on_troys_csv_export_clicked(self):
-        troys_csv_export(self.settings.all_frames, "output/troys-export.csv")
-        troys_json_export(self.settings.event_intervals, "output/troys-export.json")
-
-    def on_training_csv_export_clicked(self):
-        training_csv_export(self.settings.all_frames, "output/training-export.csv")
+    def on_export_clicked(self):
+        path = raw_csv_export(self.settings.all_frames, "src/output/raw-export.csv")
+        print(f"Exported to: {path}")
+        path = event_indexes_json_export(self.settings.event_intervals, "src/output/event_indexes.json")
+        print(f"Exported to: {path}")
 
     def update_gui(self):
         self.time_label.setText(f"Time: {(self.settings.current_timestamp - self.settings.initial_timestamp):.3f}")

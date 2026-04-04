@@ -12,6 +12,7 @@ class DataWidget(QWidget):
         super().__init__()
         self.settings = settings_model
         self.settings.inputModeChanged.connect(self.on_input_mode_changed)
+        self.settings.clearData.connect(self.on_clear_data)
 
         layout = QVBoxLayout()
 
@@ -27,6 +28,14 @@ class DataWidget(QWidget):
         
         self.setLayout(layout)
 
+    def on_clear_data(self):
+        self.table.setRowCount(0)
+        self.settings.initial_timestamp = 0.0
+        self.settings.current_timestamp = 0.0
+        self.settings.frame_count = 0
+        self.settings.frames.clear()
+        self.settings.all_frames.clear()
+
     def on_input_mode_changed(self, mode: InputMode):
         # Todo: make channel & bitrate user adjustable
         if mode == InputMode.Off:
@@ -34,7 +43,7 @@ class DataWidget(QWidget):
         elif mode == InputMode.PeakCan:
             self.settings.reader = CanReader("pcan", "PCAN_USBBUS1", 500_000)
         elif mode == InputMode.SerialPort:
-            self.settings.reader = CanReader("slcan", "COM9", 500_000)
+            self.settings.reader = CanReader("slcan", self.settings.serial_port, 500_000)
         elif mode == InputMode.CsvReplay:
             self.settings.reader = CanReader(csv_path=self.settings.csv_filepath)
 
@@ -73,6 +82,16 @@ class DataWidget(QWidget):
             noise_bits = [[False] * 8 for _ in range(msg.dlc)]
             event_bits = [[False] * 8 for _ in range(msg.dlc)]
 
+            # Förifyll noise_bits och noise_masks från baseline
+            can_id_str = format(msg.arbitration_id & 0x7FF, '04X')
+            noise_masks = [0] * msg.dlc
+            for bit_num in self.settings.baseline_noise_bits.get(can_id_str, []):
+                byte_idx = (bit_num - 1) // 8
+                bit_idx  = (bit_num - 1) % 8
+                if byte_idx < msg.dlc:
+                    noise_bits[byte_idx][bit_idx] = True
+                    noise_masks[byte_idx] |= (1 << (7 - bit_idx))
+
             frame = CanFrame(
                 time=self.settings.current_timestamp,
                 cnt=1,
@@ -81,6 +100,7 @@ class DataWidget(QWidget):
                 row=row,
                 noise_bits=noise_bits,
                 event_bits=event_bits,
+                noise_masks=noise_masks,
                 bytes_label=bytes_label,
                 bits_label=bits_label
             )
@@ -93,21 +113,16 @@ class DataWidget(QWidget):
         old_data = frame.data
         new_data = msg.data
 
-        length = min(len(old_data), len(new_data))
+        length = min(len(old_data), len(new_data), len(frame.noise_masks))
 
-        if det in (DetectionMode.Noise, DetectionMode.Event):
+        if det == DetectionMode.Event:
             for i in range(length):
-                diff = old_data[i] ^ new_data[i]  # XOR → flipped bits
-                if diff != 0:
-                    for bit in range(8):
-                        if diff & (1 << (7 - bit)):
-                            if frame.noise_bits[i][bit]:
-                                continue
-
-                            if det == DetectionMode.Noise:
-                                frame.noise_bits[i][bit] = True
-                            elif det == DetectionMode.Event:
-                                frame.event_bits[i][bit] = True
+                diff = (old_data[i] ^ new_data[i]) & ~frame.noise_masks[i] & 0xFF
+                if diff == 0:
+                    continue
+                for bit in range(8):
+                    if diff & (1 << (7 - bit)):
+                        frame.event_bits[i][bit] = True
 
         frame.time = self.settings.current_timestamp
         frame.cnt += 1
