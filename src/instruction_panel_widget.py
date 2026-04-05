@@ -11,6 +11,8 @@ class InstructionPanelWidget(QWidget):
         self._pairs = []
         self._step = 0
         self._sub = 0
+        self._lap = 0
+        self._total_laps = 2
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 8, 12, 8)
@@ -22,6 +24,10 @@ class InstructionPanelWidget(QWidget):
         header2.setWordWrap(True)
         layout.addWidget(header1)
         layout.addWidget(header2)
+
+        self.lap_label = QLabel()
+        self.lap_label.setStyleSheet("font-size: 13px; color: #aaaaaa;")
+        layout.addWidget(self.lap_label)
 
         line = QFrame()
         line.setFrameShape(QFrame.Shape.HLine)
@@ -42,15 +48,24 @@ class InstructionPanelWidget(QWidget):
         _, self._pairs = generate_instructions(self.settings.selected_events)
         self._step = 0
         self._sub = 0
+        self._lap = 1
         self._show_current()
 
     def _show_current(self):
         if self._step >= len(self._pairs):
+            if self._lap < self._total_laps:
+                self._lap += 1
+                self._step = 0
+                self._sub = 0
+                self._show_current()
+                return
+            self.lap_label.setText("")
             self.label.setText("<span style='color:#81C784;'>✔ Alla instruktioner slutförda.</span>")
             return
 
-        pair = self._pairs[self._step]
+        self.lap_label.setText(f"Varv {self._lap}/{self._total_laps}")
 
+        pair = self._pairs[self._step]
         if self._sub == 0:
             self.label.setText(f"<span style='color:#4FC3F7; font-weight:bold;'>[INSPECTOR]</span> {pair['interface']}")
         else:
