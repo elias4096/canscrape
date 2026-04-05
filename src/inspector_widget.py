@@ -107,6 +107,7 @@ class InspectorWidget(QWidget):
             layout.addWidget(button)
 
         self.event_group.buttonClicked.connect(self.on_event_clicked)
+        self.settings._event_group_ref = self.event_group
         self.vlayout.addLayout(layout)
 
     def isolation_forest_gui(self):

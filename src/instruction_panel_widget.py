@@ -57,16 +57,36 @@ class InstructionPanelWidget(QWidget):
             self.label.setText(f"<span style='color:#81C784; font-weight:bold;'>[EVENT]</span> {pair['event']}")
 
     def _on_event_clicked(self, event_name: str):
+        import re
         if not self._pairs:
             return
         if self._step < len(self._pairs) and self._sub == 0:
-            self._sub = 1
-            self._show_current()
+            expected = self._pairs[self._step]["interface"]
+            match = re.search(r'<b>(.*?)</b>', expected)
+            if match and match.group(1) == event_name:
+                self._sub = 1
+                self._lock_event_selection(True)
+                self._show_current()
 
     def _on_detection_mode_changed(self, mode: DetectionMode):
         if not self._pairs:
             return
         if mode == DetectionMode.Off:
+            self._lock_event_selection(False)
             self._step += 1
             self._sub = 0
             self._show_current()
+
+    def _lock_event_selection(self, locked: bool):
+        group = self.settings._event_group_ref
+        if group is None:
+            return
+        for btn in group.buttons():
+            if locked:
+                if btn.isChecked():
+                    btn.setStyleSheet("background-color: #c084fc; color: black;")
+                else:
+                    btn.setEnabled(False)
+            else:
+                btn.setEnabled(True)
+                btn.setStyleSheet("")

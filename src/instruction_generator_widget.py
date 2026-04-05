@@ -14,7 +14,7 @@ def event(text):
 # ---------------- DATA ----------------
 OUTSIDE_ORDER = [
     "drivers_door",
-    "front_passenger_door",
+    "passenger_door",
     "rear_left_door",
     "rear_right_door"
 ]
@@ -32,7 +32,7 @@ INSIDE_PASSENGER_ORDER = [
 
 EVENT_NAMES = {
     "drivers_door": "Drivers door",
-    "front_passenger_door": "Front Passenger Door",
+    "passenger_door": "Front Passenger Door",
     "rear_left_door": "Rear left door",
     "rear_right_door": "Rear right door",
     "hazard_lights": "Hazard lights",
@@ -44,7 +44,7 @@ EVENT_NAMES = {
 
 DOOR_TEXT = {
     "drivers_door": "Öppna och stäng förardörren tre till fyra gånger.",
-    "front_passenger_door": "Öppna och stäng <b>höger dörr fram</b> tre till fyra gånger.",
+    "passenger_door": "Öppna och stäng <b>höger dörr fram</b> tre till fyra gånger.",
     "rear_left_door": "Öppna och stäng <b>vänster dörr bak</b> tre till fyra gånger.",
     "rear_right_door": "Öppna och stäng <b>höger dörr bak</b> tre till fyra gånger."
 }
@@ -114,14 +114,14 @@ def generate_instructions(selected):
 
     # -------- PASSENGER --------
     passenger_actions = [x for x in INSIDE_PASSENGER_ORDER if x in selected]
-    has_front_passenger_door = "front_passenger_door" in selected
+    has_front_passenger_door = "passenger_door" in selected
 
     if has_front_passenger_door and passenger_actions:
-        front_passenger_door_name = EVENT_NAMES["front_passenger_door"]
+        passenger_door_name = EVENT_NAMES["passenger_door"]
 
         add_step(
-            f"Klicka på eventet <b>{front_passenger_door_name}</b>",
-            "Öppna och stäng <b>höger dörr fram</b> tre till fyra gånger, lämna den öppen, sätt dig i förarsätet, och stäng sedan dörren."
+            f"Klicka på eventet <b>{passenger_door_name}</b>",
+            "Öppna och stäng <b>höger dörr fram</b> tre till fyra gånger, lämna den öppen, sätt dig i fram-passagerarsätet, och stäng sedan dörren."
         )
 
         for action in passenger_actions:
@@ -132,7 +132,7 @@ def generate_instructions(selected):
             )
 
         add_step(
-            f"Klicka på eventet <b>{front_passenger_door_name}</b>",
+            f"Klicka på eventet <b>{passenger_door_name}</b>",
             "Öppna <b>höger dörr fram</b> och kliv ut, öppna och stäng sedan dörren tre till fyra gånger och lämna den stängd när du är klar."
         )
 
@@ -146,7 +146,7 @@ def generate_instructions(selected):
 
     # -------- ÖVRIGA DÖRRAR --------
     for door in OUTSIDE_ORDER:
-        if door in ["drivers_door", "front_passenger_door"]:
+        if door in ["drivers_door", "passenger_door"]:
             continue
 
         if door in selected:
@@ -156,12 +156,12 @@ def generate_instructions(selected):
                 DOOR_TEXT[door]
             )
 
-    # Front Passenger Door standalone
+    # front passenger door standalone
     if has_front_passenger_door and not passenger_actions:
-        name = EVENT_NAMES["front_passenger_door"]
+        name = EVENT_NAMES["passenger_door"]
         add_step(
             f"Klicka på eventet <b>{name}</b>",
-            DOOR_TEXT["front_passenger_door"]
+            DOOR_TEXT["passenger_door"]
         )
 
     return instructions, instruction_pairs
@@ -189,7 +189,7 @@ class InstructionGeneratorWidget(QWidget):
         self.checkboxes = {}
         for key, label in [
             ("drivers_door", "Driver's Door"),
-            ("front_passenger_door", "Front Passenger Door"),
+            ("passenger_door", "Front Passenger Door"),
             ("rear_left_door", "Rear Left Door"),
             ("rear_right_door", "Rear Right Door"),
             ("hazard_lights", "Hazard Lights"),

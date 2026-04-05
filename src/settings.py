@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Dict, List
 
 from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QButtonGroup
 
 from can_reader import CanReader
 from models import CanFrame, EventInterval, SimpleCanFrame
@@ -45,6 +46,7 @@ class Settings(QObject):
 
         self.selected_events: set = set()
         self.selected_event = str()
+        self._event_group_ref: "QButtonGroup | None" = None
         self.event_intervals: Dict[str, EventInterval] = {
             "Hazard lights": EventInterval(0, 0, []),
             "Footbrake": EventInterval(0, 0, []),
