@@ -50,7 +50,7 @@ class Settings(QObject):
             "Footbrake": EventInterval(0, 0, []),
             "Wipers": EventInterval(0, 0, []),
             "Drivers door": EventInterval(0, 0, []),
-            "Passenger door": EventInterval(0, 0, []),
+            "Front Passenger Door": EventInterval(0, 0, []),
             "Rear left door": EventInterval(0, 0, []),
             "Rear right door": EventInterval(0, 0, []),
             "Drivers seat belt": EventInterval(0, 0, []),

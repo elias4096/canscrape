@@ -34,7 +34,7 @@ class InspectorWidget(QWidget):
         self.setLayout(self.vlayout)
 
     def config_gui(self):
-        header = QLabel("<b>Config</b>")
+        header = QLabel("<b>Baseline</b>")
         self.vlayout.addWidget(header)
 
         filename = basename(self.settings.baseline_path) if self.settings.baseline_path else "unknown"
@@ -51,11 +51,6 @@ class InspectorWidget(QWidget):
             }
         """)
         self.vlayout.addWidget(status_label)
-
-        self.csv_label = QLabel("No CSV loaded", wordWrap=True)
-        self.csv_label.setStyleSheet("color: #aaa; font-style: italic;")
-        self.csv_label.hide()
-        self.vlayout.addWidget(self.csv_label)
 
     def input_mode_gui(self):
         header = QLabel("<b>Input mode</b>")
@@ -75,6 +70,11 @@ class InspectorWidget(QWidget):
         group.idClicked.connect(self.on_input_mode_changed)
         self.vlayout.addLayout(hlayout)
 
+        self.csv_label = QLabel("", wordWrap=True)
+        self.csv_label.setStyleSheet("color: #ccc; font-style: normal;")
+        self.csv_label.hide()
+        self.vlayout.addWidget(self.csv_label)
+
     def detection_mode_gui(self):
         header = QLabel("<b>Detection mode</b>")
         self.vlayout.addWidget(header)
@@ -89,8 +89,8 @@ class InspectorWidget(QWidget):
             group.addButton(b, id=i)
             hlayout.addWidget(b)
 
+        group.button(1).setChecked(True)
         group.idClicked.connect(self.on_detection_mode_changed)
-        group.button(1).setChecked(True)  # id=1 = "Off"
         self.vlayout.addLayout(hlayout)
 
     def event_selection_gui(self):
@@ -98,16 +98,15 @@ class InspectorWidget(QWidget):
         self.vlayout.addWidget(header)
 
         layout = QVBoxLayout()
-        group = QButtonGroup(self)
+        self.event_group = QButtonGroup(self)
 
         for event in self.settings.event_intervals.keys():
             button = QPushButton(event)
             button.setCheckable(True)
-            group.addButton(button)
+            self.event_group.addButton(button)
             layout.addWidget(button)
 
-        group.buttonClicked.connect(self.on_event_clicked)
-        group.buttons()[0].click()
+        self.event_group.buttonClicked.connect(self.on_event_clicked)
         self.vlayout.addLayout(layout)
 
     def isolation_forest_gui(self):
@@ -176,12 +175,10 @@ class InspectorWidget(QWidget):
 
     def on_detection_mode_changed(self, id: int):
         if id == 0 and self.settings.detectionMode() != DetectionMode.Event:
-            # On clicked → starta event-inspelning
             self.settings.event_intervals[self.settings.selected_event].start_index = self.settings.frame_count
             self.settings.reset_event_bits()
             self.settings.setDetectionMode(DetectionMode.Event)
         elif id == 1 and self.settings.detectionMode() == DetectionMode.Event:
-            # Off clicked → avsluta event-inspelning
             self.settings.event_intervals[self.settings.selected_event].end_index = self.settings.frame_count
             for can_id, frame in self.settings.frames.items():
                 for byte_bits in frame.event_bits:
@@ -189,6 +186,12 @@ class InspectorWidget(QWidget):
                         self.settings.event_intervals[self.settings.selected_event].interesting_ids.append(can_id)
                         break
             self.settings.setDetectionMode(DetectionMode.Off)
+            checked = self.event_group.checkedButton()
+            if checked:
+                self.event_group.setExclusive(False)
+                checked.setChecked(False)
+                self.event_group.setExclusive(True)
+            self.settings.selected_event = ""
 
     def on_event_clicked(self, button: QPushButton):
         self.settings.selected_event = button.text()
@@ -214,5 +217,9 @@ class InspectorWidget(QWidget):
         self.run_analysis.emit()
 
     def update_gui(self):
-        self.time_label.setText(f"Time: {(self.settings.current_timestamp - self.settings.initial_timestamp):.3f}")
+        t = self.settings.current_timestamp
+        minutes = int(t // 60)
+        seconds = int(t % 60)
+        milliseconds = int((t % 1) * 1000)
+        self.time_label.setText(f"Time: {minutes}m {seconds}s {milliseconds}ms")
         self.frame_count_label.setText(f"Frame count: {self.settings.frame_count}")

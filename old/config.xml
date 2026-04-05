@@ -32,9 +32,9 @@
     </Action>
 
     <Action name="PassengerDoor">
-        <Instruction1>Open the passenger door.</Instruction1>
+        <Instruction1>Open the Front Passenger Door.</Instruction1>
         <Delay>10</Delay>
-        <Instruction2>Close the passenger door.</Instruction2>
+        <Instruction2>Close the Front Passenger Door.</Instruction2>
     </Action>
 
     <Action name="RearLeftDoor">
