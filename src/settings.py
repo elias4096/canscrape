@@ -43,6 +43,7 @@ class Settings(QObject):
         self.frames: Dict[int, CanFrame] = {}
         self.all_frames: List[SimpleCanFrame] = []
 
+        self.selected_events: set = set()
         self.selected_event = str()
         self.event_intervals: Dict[str, EventInterval] = {
             "Hazard lights": EventInterval(0, 0, []),

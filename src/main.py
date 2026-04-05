@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt, QProcess
-from PySide6.QtWidgets import QApplication, QDockWidget, QMainWindow, QTabWidget, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QDockWidget, QMainWindow, QSplitter, QTabWidget, QVBoxLayout, QWidget
 
 import sys
 import os
@@ -12,6 +12,8 @@ from baseline_selector_widget import BaselineSelectorWidget
 from data_widget import DataWidget
 from event_source_selector_widget import EventSourceSelectorWidget
 from inspector_widget import InspectorWidget
+from instruction_generator_widget import InstructionGeneratorWidget
+from instruction_panel_widget import InstructionPanelWidget
 from result_widget import ResultWidget
 from settings import InputMode, Settings
 
@@ -23,30 +25,48 @@ class MainWindow(QMainWindow):
 
         self.settings = Settings()
         self._process: QProcess | None = None
+        self._in_event_phase: bool = False
 
-        data_tab = DataWidget(self.settings)
+        self.data_tab = DataWidget(self.settings)
+        self.instruction_panel = InstructionPanelWidget(self.settings)
+        self.instruction_panel.hide()
+
+        data_splitter = QSplitter(Qt.Orientation.Vertical)
+        data_splitter.addWidget(self.data_tab)
+        data_splitter.addWidget(self.instruction_panel)
+        data_splitter.setStretchFactor(0, 2)
+        data_splitter.setStretchFactor(1, 1)
+
         result_tab = ResultWidget(self.settings)
         autoencoder_detector_tab = AutoencoderDetectorWidget(self.settings)
         self.analysis_result_tab = AnalysisResultWidget()
 
         self.tabs = QTabWidget()
-        self.tabs.addTab(data_tab, "Data")
+        self.tabs.addTab(data_splitter, "Data")
         self.tabs.addTab(result_tab, "Result")
         self.tabs.addTab(autoencoder_detector_tab, "Autoencoder detector")
         self.tabs.addTab(self.analysis_result_tab, "Bit Analysis")
 
-        self.dock = QDockWidget("Baseline Setup", self)
+        self.dock = QDockWidget("Select Events", self)
         self.dock.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
-        self.selector = BaselineSelectorWidget(self.settings)
-        self.selector.baseline_done.connect(self._on_baseline_done)
-        self.selector.recording_start.connect(self._on_recording_start)
-        self.dock.setWidget(self.selector)
+        instruction_widget = InstructionGeneratorWidget(self.settings)
+        instruction_widget.next_clicked.connect(self._on_events_chosen)
+        self.dock.setWidget(instruction_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock)
+
+        self.settings.inputModeChanged.connect(self._on_input_mode_changed)
 
         central = QWidget()
         layout = QVBoxLayout(central)
         layout.addWidget(self.tabs)
         self.setCentralWidget(central)
+
+    def _on_events_chosen(self):
+        self.dock.setWindowTitle("Baseline Setup")
+        selector = BaselineSelectorWidget(self.settings)
+        selector.baseline_done.connect(self._on_baseline_done)
+        selector.recording_start.connect(self._on_recording_start)
+        self.dock.setWidget(selector)
 
     def _on_recording_start(self, mode: str, csv_path: str):
         if mode == "PeakCan":
@@ -62,7 +82,17 @@ class MainWindow(QMainWindow):
             self.settings.setInputMode(InputMode.Off)
             self.settings.clearData.emit()
 
+        if self._in_event_phase and mode in ("PeakCan", "SerialPort", "CsvReplay"):
+            self.instruction_panel.show_instructions()
+            self.instruction_panel.show()
+
+    def _on_input_mode_changed(self, mode: InputMode):
+        if self._in_event_phase and mode in (InputMode.PeakCan, InputMode.SerialPort, InputMode.CsvReplay):
+            self.instruction_panel.show_instructions()
+            self.instruction_panel.show()
+
     def _on_baseline_done(self, result_path: str):
+        self._in_event_phase = True
         self.settings.baseline_path = result_path
         self.settings.baseline_noise_bits = get_noise_bits(result_path)
 
