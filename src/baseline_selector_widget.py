@@ -78,7 +78,7 @@ class BaselineSelectorWidget(QWidget):
 
         input_mode_row = QHBoxLayout()
         self.input_mode_group = QButtonGroup(self)
-        for i, name in enumerate(["PeakCan", "Serial Port", "Csv Replay"]):
+        for i, name in enumerate(["PeakCAN", "Serial Port", "CSV Replay"]):
             b = QPushButton(name)
             b.setCheckable(True)
             self.input_mode_group.addButton(b, id=i)
@@ -166,7 +166,7 @@ class BaselineSelectorWidget(QWidget):
     def _on_record_clicked(self, checked: bool):
         if checked:
             mode_id = self.input_mode_group.checkedId()
-            modes = ["PeakCan", "SerialPort", "CsvReplay"]
+            modes = ["PeakCAN", "SerialPort", "CsvReplay"]
             self.recording_start.emit(modes[mode_id], self._csv_replay_path)
             self.record_btn.setText("⏹  Stop Recording")
             self.record_status.setText("Recording…")

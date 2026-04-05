@@ -44,7 +44,7 @@ class DataWidget(QWidget):
     def on_input_mode_changed(self, mode: InputMode):
         if mode == InputMode.Off:
             self.stop_reader()
-        elif mode == InputMode.PeakCan:
+        elif mode == InputMode.PeakCAN:
             self.settings.reader = CanReader("pcan", "PCAN_USBBUS1", 500_000)
         elif mode == InputMode.SerialPort:
             self.settings.reader = CanReader("slcan", self.settings.serial_port, 500_000)

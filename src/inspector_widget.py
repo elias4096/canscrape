@@ -56,7 +56,7 @@ class InspectorWidget(QWidget):
         header = QLabel("<b>Input mode</b>")
         self.vlayout.addWidget(header)
 
-        names = ["Off", "PeakCan", "Serial Port", "Csv Replay"]
+        names = ["Off", "PCAN-USB", "Serial Port", "CSV Replay"]
         group = QButtonGroup(self)
         hlayout = QHBoxLayout()
 
@@ -138,7 +138,7 @@ class InspectorWidget(QWidget):
             self.csv_label.hide()
             self.export_btn.setEnabled(True)
         elif id == 1:
-            self.settings.setInputMode(InputMode.PeakCan)
+            self.settings.setInputMode(InputMode.PeakCAN)
             self.csv_label.hide()
             self.export_btn.setEnabled(False)
             self.run_analysis_btn.setEnabled(False)

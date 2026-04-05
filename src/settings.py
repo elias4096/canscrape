@@ -9,7 +9,7 @@ from models import CanFrame, EventInterval, SimpleCanFrame
 
 class InputMode(Enum):
     Off = 0
-    PeakCan = 1
+    PeakCAN = 1
     SerialPort = 2
     CsvReplay = 3
 
@@ -48,15 +48,15 @@ class Settings(QObject):
         self.selected_event = str()
         self._event_group_ref: "QButtonGroup | None" = None
         self.event_intervals: Dict[str, EventInterval] = {
-            "Hazard lights": EventInterval([], []),
-            "Footbrake": EventInterval([], []),
+            "Hazard Lights": EventInterval([], []),
+            "Foot Brake": EventInterval([], []),
             "Wipers": EventInterval([], []),
-            "Drivers door": EventInterval([], []),
-            "Front Passenger Door": EventInterval([], []),
-            "Rear left door": EventInterval([], []),
-            "Rear right door": EventInterval([], []),
-            "Drivers seat belt": EventInterval([], []),
-            "Front Passenger seat belt": EventInterval([], []),
+            "Driver Door": EventInterval([], []),
+            "Passenger Door": EventInterval([], []),
+            "Rear Left Door": EventInterval([], []),
+            "Rear Right Door": EventInterval([], []),
+            "Driver seatbelt": EventInterval([], []),
+            "Passenger Seatbelt": EventInterval([], []),
         }
 
         # Private

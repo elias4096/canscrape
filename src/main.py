@@ -69,8 +69,8 @@ class MainWindow(QMainWindow):
         self.dock.setWidget(selector)
 
     def _on_recording_start(self, mode: str, csv_path: str):
-        if mode == "PeakCan":
-            self.settings.setInputMode(InputMode.PeakCan)
+        if mode == "PeakCAN":
+            self.settings.setInputMode(InputMode.PeakCAN)
         elif mode == "SerialPort":
             self.settings.setInputMode(InputMode.SerialPort)
         elif mode == "CsvReplay":
@@ -82,12 +82,12 @@ class MainWindow(QMainWindow):
             self.settings.setInputMode(InputMode.Off)
             self.settings.clearData.emit()
 
-        if self._in_event_phase and mode in ("PeakCan", "SerialPort", "CsvReplay"):
+        if self._in_event_phase and mode in ("PeakCAN", "SerialPort", "CsvReplay"):
             self.instruction_panel.show_instructions()
             self.instruction_panel.show()
 
     def _on_input_mode_changed(self, mode: InputMode):
-        if self._in_event_phase and mode in (InputMode.PeakCan, InputMode.SerialPort, InputMode.CsvReplay):
+        if self._in_event_phase and mode in (InputMode.PeakCAN, InputMode.SerialPort, InputMode.CsvReplay):
             self.instruction_panel.show_instructions()
             self.instruction_panel.show()
 

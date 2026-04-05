@@ -44,7 +44,7 @@ class AnalysisResultWidget(QWidget):
         # Format:
         #   Exklusiva bitar per event:
         #
-        #     Drivers door:
+        #     Driver Door:
         #       00C3: b5(4), b12(4)
         #       ...
         #     Inga exklusiva bitar

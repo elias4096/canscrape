@@ -1,40 +1,40 @@
-Hazard lights                  6       11       IDS: (020)
-Footbrake                      19      22       IDS: (033, 12B)
+Hazard Lights                  6       11       IDS: (020)
+Foot Brake                      19      22       IDS: (033, 12B)
 Wipers                         62      66       IDS: 501, 1D0, 198 (1D0)
-Drivers door                   84      91       IDS: 035, 038, 050, 040, 501, 350, 190, 0C3, 0C4 (040)
-Front Passenger Door                 106     110      IDS: 501, 038, 0E0 (0E0)
-Rear left door                 120     123      IDS: 1B0, 300, 040, 038, 501, 270, 470 (040)
-Rear right door                136     140      IDS: 300, 1B0, 270, 470, 501, 038, 0E0, 198 (0E0)
-Drivers seat belt    	       160     165      IDS: 23D, 0B0, 300 (0B0)
-Front Passenger seat belt      192     195      IDS: 270, 300, 185, 0B0 (0B0)
+Driver Door                   84      91       IDS: 035, 038, 050, 040, 501, 350, 190, 0C3, 0C4 (040)
+Passenger Door                 106     110      IDS: 501, 038, 0E0 (0E0)
+Rear Left Door                 120     123      IDS: 1B0, 300, 040, 038, 501, 270, 470 (040)
+Rear Right Door                136     140      IDS: 300, 1B0, 270, 470, 501, 038, 0E0, 198 (0E0)
+Driver seatbelt    	       160     165      IDS: 23D, 0B0, 300 (0B0)
+Passenger Seatbelt      192     195      IDS: 270, 300, 185, 0B0 (0B0)
 
 Park brake                     44      49       IDS: 12B, 470, 050, 370
 Passenger seat status                           IDS: (210)
 
-Drivers seat belt (isolation forest):
+Driver seatbelt (isolation forest):
 573: 41, 38, 37, 32, 29, 26, 24, 20 %
 176: 61, 58, 55, 52 %
 768: 32, 27
 
 --- Event testing ---
-Hazard lights: turn on hazard lights, wait 3 seconds, then turn off hazard lights.
-Footbrake: first during noise filtering, activate and then directly deactivate park brake. Then push down and push up footbrake.
+Hazard Lights: turn on hazard lights, wait 3 seconds, then turn off hazard lights.
+Foot Brake: first during noise filtering, activate and then directly deactivate park brake. Then push down and push up foot brake.
 Wipers: turn on wipers, wait 3 seconds, then turn off wipers.
-Drivers door: first during noise filtering, open Front Passenger Door, rear left door and rear right door. Then open and close the driver door.
-Front Passenger Door: first during noise filtering, open driver door, rear left door and rear right door. Then open and close the Front Passenger Door.
-Rear left door: first during noise filtering, open passenger front door, driver door and rear right door. Then open and close the rear left door.
-Rear right door: first during noise filtering, open passenger front door, rear left door and driver door. Then open and close the rear right door.
+Driver Door: first during noise filtering, open Passenger Door, rear left door and rear right door. Then open and close the driver door.
+Passenger Door: first during noise filtering, open driver door, rear left door and rear right door. Then open and close the Passenger Door.
+Rear Left Door: first during noise filtering, open passenger front door, driver door and rear right door. Then open and close the rear left door.
+Rear Right Door: first during noise filtering, open passenger front door, rear left door and driver door. Then open and close the rear right door.
 Drivers selt belt: first during noise filtering, connect front passenger seat belt and then disconnect it. Then connect driver seat belt.
 Passenger selt belt: first during noise filtering, connect driver seat belt and then disconnect it. Then connect passenger seat belt.
 
 --- Results ---
-Hazard lights: 020, 370, 185, 380
+Hazard Lights: 020, 370, 185, 380
 Wipers:
-Footbrake: 198, 12B, 020, 0C4, 0C3, 053, 033, 032, 120 (fail)
-Footbrake:
-Driver door: 040, 501
-Front Passenger Door: 370, 300, 0E0
-Rear left door: 040, 05A
-Rear right door: 0E0, 033, 470, 050
+Foot Brake: 198, 12B, 020, 0C4, 0C3, 053, 033, 032, 120 (fail)
+Foot Brake:
+Driver Door: 040, 501
+Passenger Door: 370, 300, 0E0
+Rear Left Door: 040, 05A
+Rear Right Door: 0E0, 033, 470, 050
 Driver selt belt: 1B0, 0B0
 Passenger selt belt:
