@@ -56,14 +56,17 @@ def raw_csv_export(frames: List[SimpleCanFrame], filename: str):
 def event_indexes_json_export(event_intervals: Dict[str, EventInterval], filename: str):
     filename = get_unique_filepath(filename)
 
-    serializable = {
-        key: {
-            "start_index": interval.start_index,
-            "end_index": interval.end_index
-        }
-        for key, interval in event_intervals.items()
-        if interval.start_index != 0 and interval.end_index != 0
-    }
+    serializable = {}
+    for key, interval in event_intervals.items():
+        completed = [(s, e) for s, e in interval.intervals if s != 0 and e != 0]
+        if not completed:
+            continue
+        entry = {}
+        for i, (start, end) in enumerate(completed):
+            suffix = "" if i == 0 else f"_{i + 1}"
+            entry[f"start_index{suffix}"] = start
+            entry[f"end_index{suffix}"] = end
+        serializable[key] = entry
 
     with open(filename, "w") as f:
         json.dump(serializable, f, indent=4)

@@ -33,6 +33,21 @@ class SimpleCanFrame:
 
 @dataclass
 class EventInterval:
-    start_index: int
-    end_index: int
+    intervals: List[tuple]  # list of (start_index, end_index) pairs
     interesting_ids: List[int]
+
+    @property
+    def start_index(self) -> int:
+        return self.intervals[-1][0] if self.intervals else 0
+
+    @property
+    def end_index(self) -> int:
+        return self.intervals[-1][1] if self.intervals else 0
+
+    def open_interval(self, start: int):
+        self.intervals.append((start, 0))
+
+    def close_interval(self, end: int):
+        if self.intervals and self.intervals[-1][1] == 0:
+            start = self.intervals[-1][0]
+            self.intervals[-1] = (start, end)

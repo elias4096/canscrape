@@ -176,11 +176,11 @@ class InspectorWidget(QWidget):
 
     def on_detection_mode_changed(self, id: int):
         if id == 0 and self.settings.detectionMode() != DetectionMode.Event:
-            self.settings.event_intervals[self.settings.selected_event].start_index = self.settings.frame_count
+            self.settings.event_intervals[self.settings.selected_event].open_interval(self.settings.frame_count)
             self.settings.reset_event_bits()
             self.settings.setDetectionMode(DetectionMode.Event)
         elif id == 1 and self.settings.detectionMode() == DetectionMode.Event:
-            self.settings.event_intervals[self.settings.selected_event].end_index = self.settings.frame_count
+            self.settings.event_intervals[self.settings.selected_event].close_interval(self.settings.frame_count)
             for can_id, frame in self.settings.frames.items():
                 for byte_bits in frame.event_bits:
                     if any(byte_bits):

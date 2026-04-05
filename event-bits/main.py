@@ -132,23 +132,21 @@ valid_ids = set(potential_event_bits.keys())
 # ---------------------------------------------------------------------------
 
 state_per_event = {
-    event_name: {
-        "zone1": _build_state_for_sections(v["zone1"], sections, valid_ids),
-        "zone2": _build_state_for_sections(v["zone2"], sections, valid_ids),
-    }
+    event_name: [
+        _build_state_for_sections(zone, sections, valid_ids)
+        for zone in v["zones"]
+    ]
     for event_name, v in actual_events.items()
 }
 
 
 def _changed_in_event(event_name: str, id_val: str, bit: int) -> bool:
-    """True om biten ändrats i zon1, OCH i zon2 (om zon2 finns)."""
-    z1 = state_per_event[event_name]["zone1"]
-    z2 = state_per_event[event_name]["zone2"]
-    in_zone1 = bit in _changed_bits(*z1.get(id_val, [0, 0]))
-    if not actual_events[event_name]["zone2"]:
-        return in_zone1
-    in_zone2 = bit in _changed_bits(*z2.get(id_val, [0, 0]))
-    return in_zone1 and in_zone2
+    """True om biten ändrats i ALLA zoner för eventet."""
+    zone_states = state_per_event[event_name]
+    return all(
+        bit in _changed_bits(*zone_state.get(id_val, [0, 0]))
+        for zone_state in zone_states
+    )
 
 
 _filter_potential_event_bits(potential_event_bits, lambda id_val, bit:

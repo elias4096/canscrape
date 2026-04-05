@@ -60,25 +60,37 @@ def assign_sections_to_events(section_ranges, json_path):
     all_assigned_sections = set()
 
     for event_name, data in events.items():
-        zone1 = set()
-        zone2 = set()
+        # Collect all (start, end) pairs dynamically: start_index, start_index_2, start_index_3 ...
+        pairs = []
+        # First pair (no suffix)
+        s = data.get("start_index", 0)
+        e = data.get("end_index", 0)
+        if s and e:
+            pairs.append((s, e))
+        # Subsequent pairs (_2, _3, ...)
+        i = 2
+        while True:
+            s = data.get(f"start_index_{i}", 0)
+            e = data.get(f"end_index_{i}", 0)
+            if not s and not e:
+                break
+            if s and e:
+                pairs.append((s, e))
+            i += 1
 
-        start1 = data.get("start_index", 0)
-        end1   = data.get("end_index", 0)
-        start2 = data.get("start_index2", 0)
-        end2   = data.get("end_index2", 0)
+        # Each pair becomes its own zone
+        zones = []
+        for start, end in pairs:
+            zone = set()
+            for sec_idx, s_start, s_end in section_ranges:
+                if overlaps(s_start, s_end, start, end):
+                    zone.add(sec_idx)
+            zones.append(sorted(zone))
 
-        for sec_idx, s_start, s_end in section_ranges:
-            if start1 and end1 and overlaps(s_start, s_end, start1, end1):
-                zone1.add(sec_idx)
-            if start2 and end2 and overlaps(s_start, s_end, start2, end2):
-                zone2.add(sec_idx)
-
-        all_secs = zone1 | zone2
+        all_secs = set(sec for zone in zones for sec in zone)
         result[event_name] = {
             "sections": sorted(all_secs),
-            "zone1":    sorted(zone1),
-            "zone2":    sorted(zone2),
+            "zones":    zones,
         }
         all_assigned_sections.update(all_secs)
 
@@ -87,8 +99,7 @@ def assign_sections_to_events(section_ranges, json_path):
     no_event_sections = sorted(all_sections - all_assigned_sections)
     result["no_event"] = {
         "sections": no_event_sections,
-        "zone1":    no_event_sections,
-        "zone2":    [],
+        "zones":    [no_event_sections],
     }
 
     return result

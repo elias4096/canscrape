@@ -48,15 +48,15 @@ class Settings(QObject):
         self.selected_event = str()
         self._event_group_ref: "QButtonGroup | None" = None
         self.event_intervals: Dict[str, EventInterval] = {
-            "Hazard lights": EventInterval(0, 0, []),
-            "Footbrake": EventInterval(0, 0, []),
-            "Wipers": EventInterval(0, 0, []),
-            "Drivers door": EventInterval(0, 0, []),
-            "Front Passenger Door": EventInterval(0, 0, []),
-            "Rear left door": EventInterval(0, 0, []),
-            "Rear right door": EventInterval(0, 0, []),
-            "Drivers seat belt": EventInterval(0, 0, []),
-            "Front Passenger seat belt": EventInterval(0, 0, []),
+            "Hazard lights": EventInterval([], []),
+            "Footbrake": EventInterval([], []),
+            "Wipers": EventInterval([], []),
+            "Drivers door": EventInterval([], []),
+            "Front Passenger Door": EventInterval([], []),
+            "Rear left door": EventInterval([], []),
+            "Rear right door": EventInterval([], []),
+            "Drivers seat belt": EventInterval([], []),
+            "Front Passenger seat belt": EventInterval([], []),
         }
 
         # Private

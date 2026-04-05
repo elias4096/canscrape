@@ -2,55 +2,41 @@
     "Drivers door": {
         "start_index": 298437,
         "end_index": 329437,
-        "start_index2": 630319,
-        "end_index2": 665515
+        "start_index_2": 630319,
+        "end_index_2": 665515
     },
     "Drivers seat belt": {
         "start_index": 353622,
-        "end_index": 401954,
-        "start_index2": 0,
-        "end_index2": 0
+        "end_index": 401954
     },
     "Footbrake": {
         "start_index": 427049,
-        "end_index": 483030,
-        "start_index2": 0,
-        "end_index2": 0
+        "end_index": 483030
     },
     "Wipers": {
         "start_index": 504716,
-        "end_index": 564062,
-        "start_index2": 0,
-        "end_index2": 0
+        "end_index": 564062
     },
     "Hazard lights": {
         "start_index": 571403,
-        "end_index": 617030,
-        "start_index2": 0,
-        "end_index2": 0
+        "end_index": 617030
     },
     "Front Passenger Door": {
         "start_index": 685098,
         "end_index": 718644,
-        "start_index2": 793123,
-        "end_index2": 826715
+        "start_index_2": 793123,
+        "end_index_2": 826715
     },
     "Front Passenger seat belt": {
         "start_index": 730941,
-        "end_index": 779837,
-        "start_index2": 0,
-        "end_index2": 0
+        "end_index": 779837
     },
     "Rear right door": {
         "start_index": 843625,
-        "end_index": 872654,
-        "start_index2": 0,
-        "end_index2": 0
+        "end_index": 872654
     },
     "Rear left door": {
         "start_index": 889042,
-        "end_index": 916146,
-        "start_index2": 0,
-        "end_index2": 0
+        "end_index": 916146
     }
 }
