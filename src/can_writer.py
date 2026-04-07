@@ -77,5 +77,7 @@ def event_indexes_json_export(event_intervals: Dict[str, EventInterval], filenam
 def baseline_export_copy(src_path: str, output_dir: str) -> str:
     filename = os.path.basename(src_path)
     dest = os.path.join(output_dir, filename)
+    if os.path.abspath(src_path) == os.path.abspath(dest):
+        return dest
     shutil.copy2(src_path, dest)
     return dest

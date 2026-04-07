@@ -1,10 +1,11 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QApplication, QButtonGroup, QFileDialog, QFrame, QHBoxLayout,
+    QApplication, QButtonGroup, QComboBox, QFileDialog, QFrame, QHBoxLayout,
     QLabel, QPushButton, QRadioButton, QSizePolicy, QVBoxLayout, QWidget
 )
 
+import serial.tools.list_ports
 from can_writer import baseline_csv_export
 from settings import Settings
 
@@ -87,6 +88,18 @@ class BaselineSelectorWidget(QWidget):
         self.input_mode_group.idClicked.connect(self._on_input_mode_clicked)
         v2.addLayout(input_mode_row)
 
+        self.port_combo = QComboBox()
+        self.port_combo.hide()
+        self._refresh_ports()
+
+        port_row = QHBoxLayout()
+        port_row.addWidget(self.port_combo)
+        refresh_btn = QPushButton("↻")
+        refresh_btn.setFixedWidth(30)
+        refresh_btn.clicked.connect(self._refresh_ports)
+        port_row.addWidget(refresh_btn)
+        v2.addLayout(port_row)
+
         record_ctrl_row = QHBoxLayout()
         self.record_btn = QPushButton("⏺  Start Recording")
         self.record_btn.setFixedWidth(160)
@@ -152,8 +165,16 @@ class BaselineSelectorWidget(QWidget):
             self.file_label.setStyleSheet("color: #ccc; font-style: normal;")
         self._update_state()
 
+    def _refresh_ports(self):
+        self.port_combo.clear()
+        ports = [p.device for p in serial.tools.list_ports.comports()]
+        self.port_combo.addItems(ports if ports else ["No ports found"])
+
     def _on_input_mode_clicked(self, id: int):
-        if id == 2:
+        self.port_combo.setVisible(id == 1)
+        if id == 1:
+            self._refresh_ports()
+        elif id == 2:
             path, _ = QFileDialog.getOpenFileName(
                 self, "Select CAN CSV file", "", "CSV files (*.csv)"
             )
@@ -167,6 +188,10 @@ class BaselineSelectorWidget(QWidget):
         if checked:
             mode_id = self.input_mode_group.checkedId()
             modes = ["PeakCAN", "SerialPort", "CsvReplay"]
+            if mode_id == 1:
+                port = self.port_combo.currentText()
+                if port != "No ports found":
+                    self.settings.serial_port = port
             self.recording_start.emit(modes[mode_id], self._csv_replay_path)
             self.record_btn.setText("⏹  Stop Recording")
             self.record_status.setText("Recording…")

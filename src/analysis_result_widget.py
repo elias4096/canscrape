@@ -1,12 +1,55 @@
 import re
+import threading
+import can
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QLabel, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
 )
 
 
+# --------------------------------------------------------------------------- #
+#  CAN listener worker thread
+# --------------------------------------------------------------------------- #
+class CANListenerThread(QThread):
+    bit_update = Signal(str, int, int)  
+    # arguments: CAN-ID (hex string), bit number, value(0/1)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.running = True
+
+        # python-can interface
+        self.bus = can.ThreadSafeBus(
+            interface="slcan",
+            channel="COM9",
+            bitrate=500000
+        )
+
+    def run(self):
+        while self.running:
+            msg = self.bus.recv(0.1)
+            if msg is None:
+                continue
+
+            can_id = f"{msg.arbitration_id:04X}"
+
+            # Extract all bits from the 8 bytes
+            for byte_index, byte_val in enumerate(msg.data):
+                for bit in range(8):
+                    bit_num = byte_index * 8 + bit
+                    bit_val = (byte_val >> bit) & 1
+                    self.bit_update.emit(can_id, bit_num, bit_val)
+
+    def stop(self):
+        self.running = False
+        self.wait(500)
+
+
+# --------------------------------------------------------------------------- #
+#  Your widget
+# --------------------------------------------------------------------------- #
 class AnalysisResultWidget(QWidget):
     def __init__(self):
         super().__init__()
@@ -18,13 +61,34 @@ class AnalysisResultWidget(QWidget):
         self.status_label.setStyleSheet("color: #888; font-style: italic;")
         layout.addWidget(self.status_label)
 
+        # ✅ Add new header: Live Bit
         self.tree = QTreeWidget()
-        self.tree.setHeaderLabels(["Event / ID", "Bits (changes)"])
+        self.tree.setHeaderLabels(["Event / ID", "Bits (changes)", "Live"])
         self.tree.setColumnWidth(0, 260)
+        self.tree.setColumnWidth(2, 80)
         self.tree.setAlternatingRowColors(True)
         self.tree.setEditTriggers(QTreeWidget.EditTrigger.NoEditTriggers)
         self.tree.setFont(QFont("Consolas", 9))
         layout.addWidget(self.tree)
+
+        # Mapping:  (id, bit) → QTreeWidgetItem
+        self.bit_items = {}
+
+        # Start background CAN thread
+        self.can_thread = CANListenerThread()
+        self.can_thread.bit_update.connect(self.update_live_bit)
+        self.can_thread.start()
+
+    # ------------------------------------------------------------------ #
+
+    def update_live_bit(self, can_id: str, bit_num: int, value: int):
+        key = (can_id, bit_num)
+        if key in self.bit_items:
+            item = self.bit_items[key]
+            item.setText(2, str(value))   # column 2 = LIVE
+            # Optional: color highlight
+            color = "#00AA00" if value == 1 else "#AA0000"
+            item.setForeground(2, Qt.GlobalColor.green if value else Qt.GlobalColor.red)
 
     # ------------------------------------------------------------------ #
 
@@ -32,22 +96,15 @@ class AnalysisResultWidget(QWidget):
         self.status_label.setText("Analysis running…")
         self.status_label.setStyleSheet("color: #e0a040; font-style: italic;")
         self.tree.clear()
+        self.bit_items.clear()
 
     def show_error(self, message: str):
         self.status_label.setText(f"Error: {message}")
         self.status_label.setStyleSheet("color: #e06060; font-style: italic;")
 
     def load_output(self, raw_output: str):
-        """Parsar stdout från event-bits/main.py och fyller trädet."""
         self.tree.clear()
-
-        # Format:
-        #   Exklusiva bitar per event:
-        #
-        #     Driver Door:
-        #       00C3: b5(4), b12(4)
-        #       ...
-        #     Inga exklusiva bitar
+        self.bit_items.clear()
 
         current_event_item: QTreeWidgetItem | None = None
 
@@ -56,35 +113,40 @@ class AnalysisResultWidget(QWidget):
             if not stripped or stripped == "Exklusiva bitar per event:":
                 continue
 
-            # Event-rubrik: slutar med ":" och innehåller inget ":" efter det
             if stripped.endswith(":") and not re.match(r'^[0-9A-Fa-f]{4}:', stripped):
                 event_name = stripped[:-1]
-                current_event_item = QTreeWidgetItem(self.tree, [event_name, ""])
+                current_event_item = QTreeWidgetItem(self.tree, [event_name, "", ""])
                 current_event_item.setFont(0, QFont("Segoe UI", 9, QFont.Weight.Bold))
                 current_event_item.setExpanded(True)
                 continue
 
             if stripped == "Inga exklusiva bitar":
                 if current_event_item:
-                    child = QTreeWidgetItem(current_event_item, ["—", "no exclusive bits"])
+                    child = QTreeWidgetItem(current_event_item, ["—", "no exclusive bits", ""])
                     child.setForeground(0, Qt.GlobalColor.gray)
                     child.setForeground(1, Qt.GlobalColor.gray)
                 continue
 
-            # ID-rad: "00C3: b5(4), b12(4)"
             id_match = re.match(r'^([0-9A-Fa-f]{4}):\s*(.+)$', stripped)
             if id_match and current_event_item:
-                can_id   = id_match.group(1)
+                can_id  = id_match.group(1)
                 bits_str = id_match.group(2)
 
-                id_item = QTreeWidgetItem(current_event_item, [can_id, ""])
+                id_item = QTreeWidgetItem(current_event_item, [can_id, "", ""])
                 id_item.setExpanded(True)
 
-                # Lägg också till varje bit som eget barn
                 for bit_match in re.finditer(r'b(\d+)\((\d+)\)', bits_str):
-                    bit_num = bit_match.group(1)
+                    bit_num = int(bit_match.group(1))
                     changes = bit_match.group(2)
-                    QTreeWidgetItem(id_item, [f"  bit {bit_num}", f"{changes} change(s)"])
+
+                    bit_item = QTreeWidgetItem(id_item, [
+                        f"  bit {bit_num}", 
+                        f"{changes} change(s)",
+                        "?"   # ✅ LIVE column initial value
+                    ])
+
+                    # Save reference for live updates
+                    self.bit_items[(can_id, bit_num)] = bit_item
 
         if self.tree.topLevelItemCount() == 0:
             self.status_label.setText("Analysis complete — no results.")
@@ -92,3 +154,9 @@ class AnalysisResultWidget(QWidget):
         else:
             self.status_label.setText("Analysis complete.")
             self.status_label.setStyleSheet("color: #6cc96c; font-style: italic;")
+
+    # ------------------------------------------------------------------ #
+
+    def closeEvent(self, event):
+        self.can_thread.stop()
+        super().closeEvent(event)

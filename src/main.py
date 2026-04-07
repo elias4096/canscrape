@@ -96,6 +96,9 @@ class MainWindow(QMainWindow):
         self.settings.baseline_path = result_path
         self.settings.baseline_noise_bits = get_noise_bits(result_path)
 
+        if self.settings.baseline_is_recording:
+            self.settings.last_export_baseline = result_path
+
         event_selector = EventSourceSelectorWidget(self.settings)
         event_selector.record_chosen.connect(self._on_record_chosen)
         event_selector.recording_start.connect(self._on_recording_start)

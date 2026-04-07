@@ -45,9 +45,9 @@ class DataWidget(QWidget):
         if mode == InputMode.Off:
             self.stop_reader()
         elif mode == InputMode.PeakCAN:
-            self.settings.reader = CanReader("pcan", "PCAN_USBBUS1", 500_000)
+            self.settings.reader = CanReader("pcan", "PCAN_USBBUS1")
         elif mode == InputMode.SerialPort:
-            self.settings.reader = CanReader("slcan", self.settings.serial_port, 500_000)
+            self.settings.reader = CanReader("slcan", self.settings.serial_port)
         elif mode == InputMode.CsvReplay:
             self.settings.reader = CanReader(csv_path=self.settings.csv_filepath)
 
@@ -232,6 +232,7 @@ class DataWidget(QWidget):
                 bytes_label=bytes_label,
                 bits_label=bits_label,
             )
+            print(msg.arbitration_id)
             self.settings.frames[msg.arbitration_id] = frame
         else:
             frame = self.settings.frames[msg.arbitration_id]
