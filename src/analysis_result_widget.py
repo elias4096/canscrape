@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 #  CAN listener worker thread
 # --------------------------------------------------------------------------- #
 class CANListenerThread(QThread):
-    bit_update = Signal(str, int, int)  
+    bit_update = Signal(str, int, int)
     # arguments: CAN-ID (hex string), bit number, value(0/1)
 
     def __init__(self, parent=None):
@@ -35,11 +35,27 @@ class CANListenerThread(QThread):
 
             can_id = f"{msg.arbitration_id:04X}"
 
-            # Extract all bits from the 8 bytes
+            # ✅ Extract reversed bits using 1-based bit numbering
             for byte_index, byte_val in enumerate(msg.data):
-                for bit in range(8):
-                    bit_num = byte_index * 8 + bit
-                    bit_val = (byte_val >> bit) & 1
+
+                for bit_zero_based in range(8):
+
+                    # Convert to 1‑based (1–8)
+                    bit_1based = bit_zero_based + 1
+
+                    # Apply the 1‑based reversal formula
+                    reversed_1based = 8 - bit_1based + 1
+
+                    # Convert back to zero-based
+                    reversed_zero_based = reversed_1based - 1
+
+                    # Extract the reversed bit value
+                    bit_val = (byte_val >> reversed_zero_based) & 1
+
+                    # Compute the global reversed bit number (1-based)
+                    bit_num = byte_index * 8 + reversed_1based
+
+                    # Emit
                     self.bit_update.emit(can_id, bit_num, bit_val)
 
     def stop(self):
@@ -48,7 +64,7 @@ class CANListenerThread(QThread):
 
 
 # --------------------------------------------------------------------------- #
-#  Your widget
+#  Main widget
 # --------------------------------------------------------------------------- #
 class AnalysisResultWidget(QWidget):
     def __init__(self):
@@ -61,7 +77,6 @@ class AnalysisResultWidget(QWidget):
         self.status_label.setStyleSheet("color: #888; font-style: italic;")
         layout.addWidget(self.status_label)
 
-        # ✅ Add new header: Live Bit
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["Event / ID", "Bits (changes)", "Live"])
         self.tree.setColumnWidth(0, 260)
@@ -71,7 +86,7 @@ class AnalysisResultWidget(QWidget):
         self.tree.setFont(QFont("Consolas", 9))
         layout.addWidget(self.tree)
 
-        # Mapping:  (id, bit) → QTreeWidgetItem
+        # Mapping: (id, bit) → QTreeWidgetItem
         self.bit_items = {}
 
         # Start background CAN thread
@@ -83,12 +98,12 @@ class AnalysisResultWidget(QWidget):
 
     def update_live_bit(self, can_id: str, bit_num: int, value: int):
         key = (can_id, bit_num)
-        if key in self.bit_items:
-            item = self.bit_items[key]
-            item.setText(2, str(value))   # column 2 = LIVE
-            # Optional: color highlight
-            color = "#00AA00" if value == 1 else "#AA0000"
-            item.setForeground(2, Qt.GlobalColor.green if value else Qt.GlobalColor.red)
+        if key not in self.bit_items:
+            return
+
+        item = self.bit_items[key]
+        item.setText(2, str(value))
+        item.setForeground(2, Qt.GlobalColor.green if value else Qt.GlobalColor.red)
 
     # ------------------------------------------------------------------ #
 
@@ -113,6 +128,7 @@ class AnalysisResultWidget(QWidget):
             if not stripped or stripped == "Exklusiva bitar per event:":
                 continue
 
+            # Event header
             if stripped.endswith(":") and not re.match(r'^[0-9A-Fa-f]{4}:', stripped):
                 event_name = stripped[:-1]
                 current_event_item = QTreeWidgetItem(self.tree, [event_name, "", ""])
@@ -127,25 +143,37 @@ class AnalysisResultWidget(QWidget):
                     child.setForeground(1, Qt.GlobalColor.gray)
                 continue
 
+            # CAN-ID entry
             id_match = re.match(r'^([0-9A-Fa-f]{4}):\s*(.+)$', stripped)
             if id_match and current_event_item:
-                can_id  = id_match.group(1)
+                can_id = id_match.group(1)
                 bits_str = id_match.group(2)
 
                 id_item = QTreeWidgetItem(current_event_item, [can_id, "", ""])
                 id_item.setExpanded(True)
 
+                # Parse bNN(N)
                 for bit_match in re.finditer(r'b(\d+)\((\d+)\)', bits_str):
-                    bit_num = int(bit_match.group(1))
+
+                    original_bit_1based = int(bit_match.group(1))
                     changes = bit_match.group(2)
 
+                    # Convert to 1-based per-byte indexing
+                    byte_index = (original_bit_1based - 1) // 8
+                    bit_in_byte_1based = ((original_bit_1based - 1) % 8) + 1
+
+                    # Reverse using the same rule as live CAN data
+                    reversed_1based = 8 - bit_in_byte_1based + 1
+
+                    # Global reversed bit
+                    bit_num = byte_index * 8 + reversed_1based
+
                     bit_item = QTreeWidgetItem(id_item, [
-                        f"  bit {bit_num}", 
+                        f"  bit {bit_num}",
                         f"{changes} change(s)",
-                        "?"   # ✅ LIVE column initial value
+                        "?"
                     ])
 
-                    # Save reference for live updates
                     self.bit_items[(can_id, bit_num)] = bit_item
 
         if self.tree.topLevelItemCount() == 0:
