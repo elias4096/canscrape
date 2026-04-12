@@ -39,7 +39,7 @@ class MainWindow(QMainWindow):
 
         result_tab = ResultWidget(self.settings)
         autoencoder_detector_tab = AutoencoderDetectorWidget(self.settings)
-        self.analysis_result_tab = AnalysisResultWidget()
+        self.analysis_result_tab = AnalysisResultWidget(self.settings)
 
         self.tabs = QTabWidget()
         self.tabs.addTab(data_splitter, "Data")
