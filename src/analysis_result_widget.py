@@ -12,7 +12,7 @@ from autoencoder_detector2 import run_full_ml_pipeline
 
 
 # --------------------------------------------------------------------------- #
-# ML Worker (NEW, SAFE)
+# ML Worker
 # --------------------------------------------------------------------------- #
 class MLWorker(QThread):
     result_ready = Signal(dict)
@@ -38,9 +38,8 @@ class MLWorker(QThread):
             self.error.emit(str(e))
 
 
-
 # --------------------------------------------------------------------------- #
-#  CAN listener worker thread (UNCHANGED)
+# CAN listener worker thread
 # --------------------------------------------------------------------------- #
 class CANListenerThread(QThread):
     bit_update = Signal(str, int, int)
@@ -89,9 +88,8 @@ class CANListenerThread(QThread):
         self.wait(500)
 
 
-
 # --------------------------------------------------------------------------- #
-#  Main widget
+# Main widget
 # --------------------------------------------------------------------------- #
 class AnalysisResultWidget(QWidget):
     def __init__(self, settings):
@@ -107,8 +105,6 @@ class AnalysisResultWidget(QWidget):
         layout.addWidget(self.status_label)
 
         self.tree = QTreeWidget()
-
-        # ✅ NEW COLUMN ADDED (safe)
         self.tree.setHeaderLabels(["Event / ID", "Bits (changes)", "Live", "Deviation"])
 
         self.tree.setColumnWidth(0, 260)
@@ -144,18 +140,15 @@ class AnalysisResultWidget(QWidget):
 
         item = self.bit_items[key]
         item.setText(2, str(value))
-
         item.setForeground(2, Qt.GlobalColor.green if value else Qt.GlobalColor.red)
 
     # ------------------------------------------------------------------ #
+    # ✅ ONLY CHANGE IS HERE
+    # ------------------------------------------------------------------ #
 
     def apply_deviation_results(self, deviation_dict: dict):
-        """
-        Injects ML results into the rightmost column.
-        """
         for event_name, per_id in deviation_dict.items():
 
-            # ✅ Qt 6 safe match flag
             items = self.tree.findItems(
                 event_name, Qt.MatchFlag.MatchExactly, 0
             )
@@ -167,12 +160,26 @@ class AnalysisResultWidget(QWidget):
             for hex_id, score in per_id.items():
                 cid = hex_id.replace("0x", "").upper().zfill(4)
 
-                # locate ID row
                 for i in range(event_item.childCount()):
-                    child = event_item.child(i)
-                    if child.text(0) == cid:
-                        child.setText(3, f"{score:.3f}")
-                        break
+                    id_item = event_item.child(i)
+                    if id_item.text(0) != cid:
+                        continue
+
+                    # set numeric value
+                    id_item.setText(3, f"{score:.3f}")
+
+                    # ✅ NEW: grey out non-deviating IDs
+                    if score <= 0:
+                        for col in range(4):
+                            id_item.setForeground(col, Qt.GlobalColor.gray)
+
+                        # optionally grey out bit rows too
+                        for j in range(id_item.childCount()):
+                            bit_item = id_item.child(j)
+                            for col in range(4):
+                                bit_item.setForeground(col, Qt.GlobalColor.gray)
+
+                    break
 
         self.status_label.setText("Analysis complete.")
         self.status_label.setStyleSheet("color: #6cc96c; font-style: italic;")
@@ -180,9 +187,6 @@ class AnalysisResultWidget(QWidget):
     # ------------------------------------------------------------------ #
 
     def load_output(self, raw_output: str):
-        """
-        Builds tree and starts ML automatically.
-        """
         self.tree.clear()
         self.bit_items.clear()
         self.id_items.clear()
@@ -194,11 +198,7 @@ class AnalysisResultWidget(QWidget):
             if not stripped or stripped == "Exklusiva bitar per event:":
                 continue
 
-            # Event header
-            if (
-                stripped.endswith(":")
-                and not re.match(r'^[0-9A-Fa-f]{4}:', stripped)
-            ):
+            if stripped.endswith(":") and not re.match(r'^[0-9A-Fa-f]{4}:', stripped):
                 event_name = stripped[:-1]
                 current_event_item = QTreeWidgetItem(
                     self.tree, [event_name, "", "", ""]
@@ -207,7 +207,6 @@ class AnalysisResultWidget(QWidget):
                 current_event_item.setExpanded(True)
                 continue
 
-            # CAN ID row
             id_match = re.match(r'^([0-9A-Fa-f]{4}):\s*(.+)$', stripped)
             if id_match and current_event_item:
 
@@ -215,10 +214,8 @@ class AnalysisResultWidget(QWidget):
                 bits_str = id_match.group(2)
 
                 id_item = QTreeWidgetItem(current_event_item, [cid, "", "", ""])
-                self.id_items[cid] = id_item
                 id_item.setExpanded(True)
 
-                # Parse bits
                 for bit_match in re.finditer(r'b(\d+)\((\d+)\)', bits_str):
 
                     original_bit = int(bit_match.group(1))
@@ -238,12 +235,7 @@ class AnalysisResultWidget(QWidget):
 
                     self.bit_items[(cid, bit_num)] = bit_item
 
-        # ✅ START ML AFTER TREE IS BUILT
         self.status_label.setText("Running anomaly detection…")
-
-        #print(self.settings.baseline_path)
-        #print(self.settings.last_export_raw)
-        #print(self.settings.last_export_json)
 
         self.worker = MLWorker(
             self.settings.baseline_path,

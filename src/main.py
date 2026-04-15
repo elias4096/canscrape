@@ -96,6 +96,12 @@ class MainWindow(QMainWindow):
         self.settings.baseline_path = result_path
         self.settings.baseline_noise_bits = get_noise_bits(result_path)
 
+        total_noise_bits = sum(len(bits) for bits in self.settings.baseline_noise_bits.values())
+        #total_bits = sum(frame.len * 8 for frame in self.settings.frames.values())
+        total_bits = len(self.settings.baseline_noise_bits) * 64  # Approximation: assume noise bits could be anywhere
+        
+        print(f"Baseline done. Found {total_noise_bits} noise bits across {len(self.settings.baseline_noise_bits)} IDs. Total bits in data: {total_bits}.")
+
         if self.settings.baseline_is_recording:
             self.settings.last_export_baseline = result_path
 
