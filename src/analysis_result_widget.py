@@ -169,7 +169,7 @@ class AnalysisResultWidget(QWidget):
                     id_item.setText(3, f"{score:.3f}")
 
                     # ✅ NEW: grey out non-deviating IDs
-                    if score <= 0:
+                    if score <= 1.0:
                         for col in range(4):
                             id_item.setForeground(col, Qt.GlobalColor.gray)
 

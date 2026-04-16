@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import IsolationForest
+from pyod.models.hbos import HBOS
 
 
 # ============================================================
@@ -59,10 +59,10 @@ def parse_relevant_ids_from_text(text):
 
 
 # ============================================================
-# 3. TRAIN ISOLATION FORESTS (NO CACHING)
+# 3. TRAIN HBOS PER ID (BASELINE = OFF)
 # ============================================================
 
-def train_isolation_forests(baseline_df):
+def train_hbos_models(baseline_df):
     models = {}
     scalers = {}
     baseline_stats = {}
@@ -73,16 +73,15 @@ def train_isolation_forests(baseline_df):
         scaler = StandardScaler()
         X = scaler.fit_transform(X_raw)
 
-        model = IsolationForest(
-            n_estimators=200,
-            contamination="auto",
-            max_samples="auto",
-            random_state=42,
-            n_jobs=-1
+        model = HBOS(
+            n_bins=20,
+            alpha=0.1
         )
         model.fit(X)
 
-        baseline_scores = -model.score_samples(X)
+        # Baseline reference distribution
+        baseline_scores = model.decision_function(X)
+
         baseline_stats[can_id] = (
             baseline_scores.mean(),
             baseline_scores.std() + 1e-6
@@ -95,7 +94,7 @@ def train_isolation_forests(baseline_df):
 
 
 # ============================================================
-# 4. DEVIATION COMPUTATION (IMPROVED)
+# 4. DEVIATION COMPUTATION (HBOS ONLY)
 # ============================================================
 
 def compute_deviation(events, actions, action_to_ids,
@@ -107,7 +106,7 @@ def compute_deviation(events, actions, action_to_ids,
         relevant_ids = set(action_to_ids.get(action_name, []))
         scores = {cid: [] for cid in relevant_ids}
 
-        # collect segments
+        # Collect segments
         segments = []
         i = 1
         while True:
@@ -134,7 +133,10 @@ def compute_deviation(events, actions, action_to_ids,
 
                 X = scalers[can_id].transform(X_raw)
 
-                raw_scores = -models[can_id].score_samples(X)
+                # HBOS scores (higher = more anomalous)
+                raw_scores = models[can_id].decision_function(X)
+
+                # Focus on strongest deviation in window
                 window_score = np.percentile(raw_scores, 80)
 
                 mean, std = baseline_stats[can_id]
@@ -151,7 +153,7 @@ def compute_deviation(events, actions, action_to_ids,
 
 
 # ============================================================
-# 5. ENTRY POINT
+# 5. ENTRY POINT (FOR GUI)
 # ============================================================
 
 def run_full_ml_pipeline(
@@ -165,7 +167,7 @@ def run_full_ml_pipeline(
     actions = load_actions(actions_path)
     action_to_ids = parse_relevant_ids_from_text(exclusive_ids_text)
 
-    models, scalers, baseline_stats = train_isolation_forests(baseline)
+    models, scalers, baseline_stats = train_hbos_models(baseline)
 
     return compute_deviation(
         events,
