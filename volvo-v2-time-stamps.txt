@@ -7,3 +7,16 @@ Rear Left Door      120     123      IDS: 1B0, 300, 040, 038, 501, 270, 470 (040
 Rear Right Door     136     140      IDS: 300, 1B0, 270, 470, 501, 038, 0E0, 198 (0E0)
 Driver seatbelt     160     165      IDS: 23D, 0B0, 300 (0B0)
 Passenger Seatbelt  192     195      IDS: 270, 300, 185, 0B0 (0B0)
+
+
+
+
+Hazard Lights       020, 380
+Foot Brake          032, 033, 12B, 120
+Wipers              1D0
+Driver Door         040
+Passenger Door      0E0
+Rear Left Door      040
+Rear Right Door     0E0
+Driver seatbelt     0B0
+Passenger Seatbelt  0B0

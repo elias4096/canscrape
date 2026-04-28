@@ -1,11 +1,18 @@
 import re
 import threading
 import can
+import json
 
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QLabel, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+    QLabel,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+    QPushButton,
+    QFileDialog,
 )
 
 from autoencoder_detector2 import run_full_ml_pipeline
@@ -104,13 +111,20 @@ class AnalysisResultWidget(QWidget):
         self.status_label.setStyleSheet("color: #888; font-style: italic;")
         layout.addWidget(self.status_label)
 
+        self.export_btn = QPushButton("Export selected bits (JSON)")
+        self.export_btn.clicked.connect(self.export_selected_bits)
+        layout.addWidget(self.export_btn)
+
         self.tree = QTreeWidget()
-        self.tree.setHeaderLabels(["Event / ID", "Bits (changes)", "Live", "Deviation"])
+        self.tree.setHeaderLabels(
+            ["Event / ID", "Bits (changes)", "Live", "Deviation", "Select"]
+        )
 
         self.tree.setColumnWidth(0, 260)
         self.tree.setColumnWidth(1, 140)
         self.tree.setColumnWidth(2, 80)
         self.tree.setColumnWidth(3, 120)
+        self.tree.setColumnWidth(4, 70)
 
         self.tree.setAlternatingRowColors(True)
         self.tree.setEditTriggers(QTreeWidget.EditTrigger.NoEditTriggers)
@@ -118,18 +132,20 @@ class AnalysisResultWidget(QWidget):
         layout.addWidget(self.tree)
 
         self.bit_items = {}
-        self.id_items = {}
+        self.selectable_bits = {}
 
         self.can_thread = CANListenerThread()
         self.can_thread.bit_update.connect(self.update_live_bit)
         self.can_thread.start()
+
+    # ------------------------------------------------------------------ #
 
     def show_running(self):
         self.status_label.setText("Analysis running…")
         self.status_label.setStyleSheet("color: #e0a040; font-style: italic;")
         self.tree.clear()
         self.bit_items.clear()
-        self.id_items.clear()
+        self.selectable_bits.clear()
 
     # ------------------------------------------------------------------ #
 
@@ -140,15 +156,15 @@ class AnalysisResultWidget(QWidget):
 
         item = self.bit_items[key]
         item.setText(2, str(value))
-        item.setForeground(2, Qt.GlobalColor.green if value else Qt.GlobalColor.red)
+        item.setForeground(
+            2,
+            Qt.GlobalColor.green if value else Qt.GlobalColor.red
+        )
 
-    # ------------------------------------------------------------------ #
-    # ✅ ONLY CHANGE IS HERE
     # ------------------------------------------------------------------ #
 
     def apply_deviation_results(self, deviation_dict: dict):
         for event_name, per_id in deviation_dict.items():
-
             items = self.tree.findItems(
                 event_name, Qt.MatchFlag.MatchExactly, 0
             )
@@ -165,20 +181,15 @@ class AnalysisResultWidget(QWidget):
                     if id_item.text(0) != cid:
                         continue
 
-                    # set numeric value
                     id_item.setText(3, f"{score:.3f}")
 
-                    # ✅ NEW: grey out non-deviating IDs
                     if score <= 1.0:
-                        for col in range(4):
+                        for col in range(5):
                             id_item.setForeground(col, Qt.GlobalColor.gray)
-
-                        # optionally grey out bit rows too
                         for j in range(id_item.childCount()):
                             bit_item = id_item.child(j)
-                            for col in range(4):
+                            for col in range(5):
                                 bit_item.setForeground(col, Qt.GlobalColor.gray)
-
                     break
 
         self.status_label.setText("Analysis complete.")
@@ -189,7 +200,7 @@ class AnalysisResultWidget(QWidget):
     def load_output(self, raw_output: str):
         self.tree.clear()
         self.bit_items.clear()
-        self.id_items.clear()
+        self.selectable_bits.clear()
 
         current_event_item = None
 
@@ -198,26 +209,32 @@ class AnalysisResultWidget(QWidget):
             if not stripped or stripped == "Exklusiva bitar per event:":
                 continue
 
-            if stripped.endswith(":") and not re.match(r'^[0-9A-Fa-f]{4}:', stripped):
+            if stripped.endswith(":") and not re.match(
+                r'^[0-9A-Fa-f]{4}:', stripped
+            ):
                 event_name = stripped[:-1]
                 current_event_item = QTreeWidgetItem(
-                    self.tree, [event_name, "", "", ""]
+                    self.tree, [event_name, "", "", "", ""]
                 )
-                current_event_item.setFont(0, QFont("Segoe UI", 9, QFont.Weight.Bold))
+                current_event_item.setFont(
+                    0, QFont("Segoe UI", 9, QFont.Weight.Bold)
+                )
                 current_event_item.setExpanded(True)
                 continue
 
             id_match = re.match(r'^([0-9A-Fa-f]{4}):\s*(.+)$', stripped)
             if id_match and current_event_item:
-
                 cid = id_match.group(1)
                 bits_str = id_match.group(2)
 
-                id_item = QTreeWidgetItem(current_event_item, [cid, "", "", ""])
+                id_item = QTreeWidgetItem(
+                    current_event_item, [cid, "", "", "", ""]
+                )
                 id_item.setExpanded(True)
 
-                for bit_match in re.finditer(r'b(\d+)\((\d+)\)', bits_str):
-
+                for bit_match in re.finditer(
+                    r'b(\d+)\((\d+)\)', bits_str
+                ):
                     original_bit = int(bit_match.group(1))
                     changes = bit_match.group(2)
 
@@ -226,14 +243,21 @@ class AnalysisResultWidget(QWidget):
                     reversed_1based = 8 - bit_in_byte + 1
                     bit_num = byte_index * 8 + reversed_1based
 
-                    bit_item = QTreeWidgetItem(id_item, [
-                        f"  bit {bit_num}",
-                        f"{changes} change(s)",
-                        "?",
-                        ""
-                    ])
+                    bit_item = QTreeWidgetItem(
+                        id_item,
+                        [
+                            f"  bit {bit_num}",
+                            f"{changes} change(s)",
+                            "?",
+                            "",
+                            "",
+                        ],
+                    )
+
+                    bit_item.setCheckState(4, Qt.CheckState.Unchecked)
 
                     self.bit_items[(cid, bit_num)] = bit_item
+                    self.selectable_bits[(cid, bit_num)] = bit_item
 
         self.status_label.setText("Running anomaly detection…")
 
@@ -246,6 +270,36 @@ class AnalysisResultWidget(QWidget):
         self.worker.result_ready.connect(self.apply_deviation_results)
         self.worker.error.connect(self.show_error)
         self.worker.start()
+
+    # ------------------------------------------------------------------ #
+
+    def export_selected_bits(self):
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export selected bits",
+            "selected_bits.json",
+            "JSON files (*.json)",
+        )
+        if not path:
+            return
+
+        export_data = {}
+
+        for (cid, bit_num), item in self.selectable_bits.items():
+            if item.checkState(4) != Qt.CheckState.Checked:
+                continue
+
+            id_item = item.parent()
+            event_item = id_item.parent()
+            event_name = event_item.text(0)
+
+            export_data \
+                .setdefault(event_name, {}) \
+                .setdefault(cid, []) \
+                .append(bit_num)
+
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(export_data, f, indent=2)
 
     # ------------------------------------------------------------------ #
 
