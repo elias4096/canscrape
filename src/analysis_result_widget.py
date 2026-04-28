@@ -1,7 +1,6 @@
 import re
-import threading
-import can
 import json
+import can
 
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QFont
@@ -16,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from autoencoder_detector2 import run_full_ml_pipeline
+from settings import InputMode
 
 
 # --------------------------------------------------------------------------- #
@@ -38,61 +38,11 @@ class MLWorker(QThread):
                 self.baseline,
                 self.events,
                 self.actions,
-                self.exclusive
+                self.exclusive,
             )
             self.result_ready.emit(result)
         except Exception as e:
             self.error.emit(str(e))
-
-
-# --------------------------------------------------------------------------- #
-# CAN listener worker thread
-# --------------------------------------------------------------------------- #
-class CANListenerThread(QThread):
-    bit_update = Signal(str, int, int)
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.running = True
-
-        try:
-            self.bus = can.ThreadSafeBus(
-                interface="slcan",
-                channel="COM9",
-                bitrate=500000
-            )
-        except Exception as e:
-            print(f"CAN ERROR: {e}")
-            self.bus = None
-
-    def run(self):
-        if self.bus is None:
-            while self.running:
-                self.msleep(100)
-            return
-
-        while self.running:
-            msg = self.bus.recv(0.1)
-            if msg is None:
-                continue
-
-            can_id = f"{msg.arbitration_id:04X}"
-
-            for byte_index, byte_val in enumerate(msg.data):
-                for bit_zero_based in range(8):
-
-                    bit_1based = bit_zero_based + 1
-                    reversed_1based = 8 - bit_1based + 1
-                    reversed_zero_based = reversed_1based - 1
-
-                    bit_val = (byte_val >> reversed_zero_based) & 1
-                    bit_num = byte_index * 8 + reversed_1based
-
-                    self.bit_update.emit(can_id, bit_num, bit_val)
-
-    def stop(self):
-        self.running = False
-        self.wait(500)
 
 
 # --------------------------------------------------------------------------- #
@@ -103,6 +53,8 @@ class AnalysisResultWidget(QWidget):
         super().__init__()
 
         self.settings = settings
+
+        settings.setInputMode(InputMode.SerialPort)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
@@ -119,7 +71,6 @@ class AnalysisResultWidget(QWidget):
         self.tree.setHeaderLabels(
             ["Event / ID", "Bits (changes)", "Live", "Deviation", "Select"]
         )
-
         self.tree.setColumnWidth(0, 260)
         self.tree.setColumnWidth(1, 140)
         self.tree.setColumnWidth(2, 80)
@@ -134,9 +85,34 @@ class AnalysisResultWidget(QWidget):
         self.bit_items = {}
         self.selectable_bits = {}
 
-        self.can_thread = CANListenerThread()
-        self.can_thread.bit_update.connect(self.update_live_bit)
-        self.can_thread.start()
+        # ------------------------------------------------------------------ #
+        # ✅ Use settings.reader instead of custom CAN thread
+        # ------------------------------------------------------------------ #
+        self.reader = self.settings.reader
+        if self.reader is not None:
+            self.reader.msg_signal.connect(self.on_can_message)
+
+            # Ensure reader is actually running
+            if not self.reader.isRunning():
+                self.reader.start()
+
+    # ------------------------------------------------------------------ #
+    # CAN message handling (bit decoding)
+    # ------------------------------------------------------------------ #
+    def on_can_message(self, msg: can.Message):
+        can_id = f"{msg.arbitration_id:04X}"
+
+        for byte_index, byte_val in enumerate(msg.data):
+            for bit_zero_based in range(8):
+                bit_1based = bit_zero_based + 1
+                reversed_1based = 8 - bit_1based + 1
+                reversed_zero_based = reversed_1based - 1
+
+                # ✅ Correct Python bit extraction
+                bit_val = (byte_val >> reversed_zero_based) & 1
+                bit_num = byte_index * 8 + reversed_1based
+
+                self.update_live_bit(can_id, bit_num, bit_val)
 
     # ------------------------------------------------------------------ #
 
@@ -157,8 +133,7 @@ class AnalysisResultWidget(QWidget):
         item = self.bit_items[key]
         item.setText(2, str(value))
         item.setForeground(
-            2,
-            Qt.GlobalColor.green if value else Qt.GlobalColor.red
+            2, Qt.GlobalColor.green if value else Qt.GlobalColor.red
         )
 
     # ------------------------------------------------------------------ #
@@ -184,11 +159,12 @@ class AnalysisResultWidget(QWidget):
                     id_item.setText(3, f"{score:.3f}")
 
                     if score <= 1.0:
-                        for col in range(5):
+                        for col in (0, 1, 3, 4):
                             id_item.setForeground(col, Qt.GlobalColor.gray)
+
                         for j in range(id_item.childCount()):
                             bit_item = id_item.child(j)
-                            for col in range(5):
+                            for col in (0, 1, 3, 4):
                                 bit_item.setForeground(col, Qt.GlobalColor.gray)
                     break
 
@@ -209,9 +185,7 @@ class AnalysisResultWidget(QWidget):
             if not stripped or stripped == "Exklusiva bitar per event:":
                 continue
 
-            if stripped.endswith(":") and not re.match(
-                r'^[0-9A-Fa-f]{4}:', stripped
-            ):
+            if stripped.endswith(":") and not re.match(r'^[0-9A-Fa-f]{4}:', stripped):
                 event_name = stripped[:-1]
                 current_event_item = QTreeWidgetItem(
                     self.tree, [event_name, "", "", "", ""]
@@ -232,9 +206,7 @@ class AnalysisResultWidget(QWidget):
                 )
                 id_item.setExpanded(True)
 
-                for bit_match in re.finditer(
-                    r'b(\d+)\((\d+)\)', bits_str
-                ):
+                for bit_match in re.finditer(r'b(\d+)\((\d+)\)', bits_str):
                     original_bit = int(bit_match.group(1))
                     changes = bit_match.group(2)
 
@@ -251,7 +223,7 @@ class AnalysisResultWidget(QWidget):
                             "?",
                             "",
                             "",
-                        ],
+                        ]
                     )
 
                     bit_item.setCheckState(4, Qt.CheckState.Unchecked)
@@ -265,7 +237,7 @@ class AnalysisResultWidget(QWidget):
             self.settings.baseline_path,
             self.settings.last_export_raw,
             self.settings.last_export_json,
-            raw_output
+            raw_output,
         )
         self.worker.result_ready.connect(self.apply_deviation_results)
         self.worker.error.connect(self.show_error)
@@ -308,5 +280,5 @@ class AnalysisResultWidget(QWidget):
         self.status_label.setStyleSheet("color: red; font-style: italic;")
 
     def closeEvent(self, event):
-        self.can_thread.stop()
+        # Reader ownership is external
         super().closeEvent(event)

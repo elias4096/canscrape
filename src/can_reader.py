@@ -20,7 +20,7 @@ class CanReader(QThread):
     def run(self):
         if self.csv_path == "":  # Live CAN reading
             #self.bitrate = self.detect_bitrate()
-            self.bitrate = 125_000
+            self.bitrate = 500_000
             if self.bitrate is None:
                 print("Failed to detect any valid bitrate.")
                 return
