@@ -1,209 +1,159 @@
-from typing import List, Dict
-import pandas as pd
+import json
+import re
 import numpy as np
-import torch
-import torch.nn as nn
+import pandas as pd
+
 from sklearn.preprocessing import StandardScaler
-
-from models import SimpleCanFrame
-
-
-# ============================================================
-#  Δ-BYTE FEATURE EXTRACTION
-# ============================================================
-
-def compute_delta_bytes(byte_array_2d: np.ndarray) -> np.ndarray:
-    """
-    Given Nx8 array of raw CAN bytes, return Nx8 array of deltas:
-    Δ[i] = bytes[i] - bytes[i-1]
-    First row gets 0 deltas.
-    """
-    if len(byte_array_2d) == 0:
-        return byte_array_2d
-
-    deltas = np.zeros_like(byte_array_2d, dtype=float)
-    deltas[1:] = byte_array_2d[1:] - byte_array_2d[:-1]
-    return deltas
+from pyod.models.hbos import HBOS
 
 
-# ============================================================
-#  Autoencoder Model (16 features = 8 raw + 8 delta)
-# ============================================================
-
-class Autoencoder(nn.Module):
-    def __init__(self, input_dim=16):
-        super().__init__()
-
-        self.encoder = nn.Sequential(
-            nn.Linear(input_dim, 32),
-            nn.ReLU(),
-            nn.Linear(32, 8),
-            nn.ReLU(),
-            nn.Linear(8, 2)
-        )
-
-        self.decoder = nn.Sequential(
-            nn.Linear(2, 8),
-            nn.ReLU(),
-            nn.Linear(8, 32),
-            nn.ReLU(),
-            nn.Linear(32, input_dim),
-            nn.Sigmoid()
-        )
-
-    def forward(self, x):
-        latent = self.encoder(x)
-        return self.decoder(latent)
+def load_baseline(path):
+    return pd.read_csv(path)
 
 
-# ============================================================
-#  Helper: Train autoencoder for one ID
-# ============================================================
+def load_events(path):
+    df = pd.read_csv(path)
 
-def train_autoencoder_for_id(idle_bytes: np.ndarray, epochs: int):
-    """
-    idle_bytes: Nx8 raw CAN data for ONE CAN ID.
-    We compute Δ-bytes and train on [raw + delta].
-    """
-    # Raw bytes
-    raw = idle_bytes.astype(float)
+    def clean_id(x):
+        x = str(x).replace("000000", "")
+        return int(x, 16)
 
-    # Δ bytes
-    delta = compute_delta_bytes(raw)
+    df["ID"] = df["ID"].apply(clean_id)
 
-    # Concatenate → Nx16
-    X = np.hstack([raw, delta])
+    for c in ["D1","D2","D3","D4","D5","D6","D7","D8"]:
+        df[c] = df[c].apply(lambda x: int(str(x), 16)).astype(np.float32)
 
-    # Normalize
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-
-    X_tensor = torch.tensor(X_scaled, dtype=torch.float32)
-
-    model = Autoencoder(input_dim=X.shape[1])
-    criterion = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
-    # Train
-    model.train()
-    for epoch in range(epochs):
-        optimizer.zero_grad()
-        recon = model(X_tensor)
-        loss = criterion(recon, X_tensor)
-        loss.backward()
-        optimizer.step()
-
-    return model, scaler
+    return df
 
 
-# ============================================================
-#  Compute event reconstruction errors for one ID
-# ============================================================
-
-def compute_errors_for_id(model, scaler, event_bytes: np.ndarray) -> np.ndarray:
-    if len(event_bytes) == 0:
-        return np.array([])
-
-    raw = event_bytes.astype(float)
-    delta = compute_delta_bytes(raw)
-    X = np.hstack([raw, delta])     # Nx16 feature matrix
-
-    X_scaled = scaler.transform(X)
-    X_tensor = torch.tensor(X_scaled, dtype=torch.float32)
-
-    with torch.no_grad():
-        recon = model(X_tensor)
-        mse = torch.mean((X_tensor - recon) ** 2, dim=1).numpy()
-
-    return mse
+def load_actions(path):
+    with open(path, "r") as f:
+        return json.load(f)
 
 
-# ============================================================
-#  Likelihood mapping
-# ============================================================
+def parse_relevant_ids_from_text(text):
+    action_map = {}
+    current_action = None
 
-def likelihood_from_error(err):
-    return min((err / 300) * 100, 100)
+    for line in text.splitlines():
+        line = line.rstrip()
 
-
-# ============================================================
-#  Main API: per-ID autoencoder detection
-# ============================================================
-
-def likelihood_from_frames(
-    baseline_csv: str,
-    event_frames: List[SimpleCanFrame],
-    allowed_ids: List[int],
-    epochs: int = 20
-):
-    """
-    One autoencoder PER CAN ID.
-    Now uses: RAW bytes + Δ bytes.
-    Much more sensitive to small changes.
-    """
-
-    # Load idle CSV
-    idle_df = pd.read_csv(baseline_csv)
-
-    byte_cols = ["d1","d2","d3","d4","d5","d6","d7","d8"]
-    cols = ["id"] + byte_cols
-
-    # Convert event frames -> DataFrame
-    event_df = pd.DataFrame([
-        {c: getattr(f, c, 0) for c in cols}
-        for f in event_frames
-    ])
-
-    # Filter IDs
-    idle_df = idle_df[idle_df["id"].isin(allowed_ids)]
-    event_df = event_df[event_df["id"].isin(allowed_ids)]
-
-    # Group idle/event by CAN ID
-    idle_groups = {
-        can_id: group[byte_cols].to_numpy()
-        for can_id, group in idle_df.groupby("id")
-    }
-
-    event_groups = {
-        can_id: group[byte_cols].to_numpy()
-        for can_id, group in event_df.groupby("id")
-    }
-
-    # Train 1 model per ID
-    models = {}
-    scalers = {}
-
-    for can_id, idle_bytes in idle_groups.items():
-        if len(idle_bytes) < 20:
+        if re.match(r"^\s*\S.*:$", line):
+            current_action = line.replace(":", "").strip()
+            action_map[current_action] = []
             continue
 
-        model, scaler = train_autoencoder_for_id(idle_bytes, epochs)
+        match = re.match(r"^\s*([0-9A-Fa-f]{4}):", line)
+        if match and current_action:
+            action_map[current_action].append(int(match.group(1), 16))
+
+    return action_map
+
+
+def train_hbos_models(baseline_df):
+    models = {}
+    scalers = {}
+    baseline_stats = {}
+
+    for can_id, rows in baseline_df.groupby("id"):
+        X_raw = rows.iloc[:, 1:].values.astype(np.float32)
+
+        scaler = StandardScaler()
+        X = scaler.fit_transform(X_raw)
+
+        model = HBOS(
+            n_bins=20,
+            alpha=0.1
+        )
+        model.fit(X)
+
+        # Baseline reference distribution
+        baseline_scores = model.decision_function(X)
+
+        baseline_stats[can_id] = (
+            baseline_scores.mean(),
+            baseline_scores.std() + 1e-6
+        )
+
         models[can_id] = model
         scalers[can_id] = scaler
 
-    # Compute event reconstruction error per ID
-    rows = []
+    return models, scalers, baseline_stats
 
-    for can_id, event_bytes in event_groups.items():
-        if can_id not in models:
-            continue
 
-        model = models[can_id]
-        scaler = scalers[can_id]
+def compute_deviation(events, actions, action_to_ids,
+                      models, scalers, baseline_stats):
 
-        errors = compute_errors_for_id(model, scaler, event_bytes)
+    results = {}
 
-        for i, e in enumerate(errors):
-            rows.append({
-                "id": can_id,
-                "index_in_event": i,
-                "recon_error": e,
-                "likelihood": likelihood_from_error(e),
-            })
+    for action_name, action_info in actions.items():
+        relevant_ids = set(action_to_ids.get(action_name, []))
+        scores = {cid: [] for cid in relevant_ids}
 
-    result_df = pd.DataFrame(rows)
+        # Collect segments
+        segments = []
+        i = 1
+        while True:
+            s = "start_index" if i == 1 else f"start_index_{i}"
+            e = "end_index"   if i == 1 else f"end_index_{i}"
+            if s in action_info and e in action_info:
+                segments.append((action_info[s], action_info[e]))
+                i += 1
+            else:
+                break
 
-    if result_df.empty:
-        return result_df
+        for start, end in segments:
+            seg = events.iloc[start:end]
 
-    return result_df.sort_values("likelihood", ascending=False)
+            for can_id, rows in seg.groupby("ID"):
+                if can_id not in relevant_ids:
+                    continue
+                if can_id not in models:
+                    continue
+
+                X_raw = rows[
+                    ["D1","D2","D3","D4","D5","D6","D7","D8"]
+                ].values.astype(np.float32)
+
+                X = scalers[can_id].transform(X_raw)
+
+                # HBOS scores (higher = more anomalous)
+                raw_scores = models[can_id].decision_function(X)
+
+                # Focus on strongest deviation in window
+                window_score = np.percentile(raw_scores, 80)
+
+                mean, std = baseline_stats[can_id]
+                z = (window_score - mean) / std
+
+                scores[can_id].append(z)
+
+        results[action_name] = {
+            f"0x{cid:X}": float(np.mean(v))
+            for cid, v in scores.items() if v
+        }
+
+    return results
+
+
+def run_full_ml_pipeline(
+    baseline_path,
+    events_path,
+    actions_path,
+    exclusive_ids_text
+):
+    baseline = load_baseline(baseline_path)
+    events = load_events(events_path)
+    actions = load_actions(actions_path)
+    action_to_ids = parse_relevant_ids_from_text(exclusive_ids_text)
+
+    models, scalers, baseline_stats = train_hbos_models(baseline)
+
+    return compute_deviation(
+        events,
+        actions,
+        action_to_ids,
+        models,
+        scalers,
+        baseline_stats
+    )

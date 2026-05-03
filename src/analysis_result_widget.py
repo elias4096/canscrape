@@ -14,13 +14,10 @@ from PySide6.QtWidgets import (
     QFileDialog,
 )
 
-from autoencoder_detector2 import run_full_ml_pipeline
+from autoencoder_detector import run_full_ml_pipeline
 from settings import InputMode
 
 
-# --------------------------------------------------------------------------- #
-# ML Worker
-# --------------------------------------------------------------------------- #
 class MLWorker(QThread):
     result_ready = Signal(dict)
     error = Signal(str)
@@ -45,9 +42,6 @@ class MLWorker(QThread):
             self.error.emit(str(e))
 
 
-# --------------------------------------------------------------------------- #
-# Main widget
-# --------------------------------------------------------------------------- #
 class AnalysisResultWidget(QWidget):
     def __init__(self, settings):
         super().__init__()
@@ -85,9 +79,6 @@ class AnalysisResultWidget(QWidget):
         self.bit_items = {}
         self.selectable_bits = {}
 
-        # ------------------------------------------------------------------ #
-        # ✅ Use settings.reader instead of custom CAN thread
-        # ------------------------------------------------------------------ #
         self.reader = self.settings.reader
         if self.reader is not None:
             self.reader.msg_signal.connect(self.on_can_message)
@@ -96,9 +87,7 @@ class AnalysisResultWidget(QWidget):
             if not self.reader.isRunning():
                 self.reader.start()
 
-    # ------------------------------------------------------------------ #
-    # CAN message handling (bit decoding)
-    # ------------------------------------------------------------------ #
+
     def on_can_message(self, msg: can.Message):
         can_id = f"{msg.arbitration_id:04X}"
 
@@ -108,13 +97,11 @@ class AnalysisResultWidget(QWidget):
                 reversed_1based = 8 - bit_1based + 1
                 reversed_zero_based = reversed_1based - 1
 
-                # ✅ Correct Python bit extraction
                 bit_val = (byte_val >> reversed_zero_based) & 1
                 bit_num = byte_index * 8 + reversed_1based
 
                 self.update_live_bit(can_id, bit_num, bit_val)
 
-    # ------------------------------------------------------------------ #
 
     def show_running(self):
         self.status_label.setText("Analysis running…")
@@ -123,7 +110,6 @@ class AnalysisResultWidget(QWidget):
         self.bit_items.clear()
         self.selectable_bits.clear()
 
-    # ------------------------------------------------------------------ #
 
     def update_live_bit(self, can_id: str, bit_num: int, value: int):
         key = (can_id, bit_num)
@@ -136,7 +122,6 @@ class AnalysisResultWidget(QWidget):
             2, Qt.GlobalColor.green if value else Qt.GlobalColor.red
         )
 
-    # ------------------------------------------------------------------ #
 
     def apply_deviation_results(self, deviation_dict: dict):
         for event_name, per_id in deviation_dict.items():
@@ -171,7 +156,6 @@ class AnalysisResultWidget(QWidget):
         self.status_label.setText("Analysis complete.")
         self.status_label.setStyleSheet("color: #6cc96c; font-style: italic;")
 
-    # ------------------------------------------------------------------ #
 
     def load_output(self, raw_output: str):
         self.tree.clear()
@@ -243,7 +227,6 @@ class AnalysisResultWidget(QWidget):
         self.worker.error.connect(self.show_error)
         self.worker.start()
 
-    # ------------------------------------------------------------------ #
 
     def export_selected_bits(self):
         path, _ = QFileDialog.getSaveFileName(
@@ -273,7 +256,6 @@ class AnalysisResultWidget(QWidget):
         with open(path, "w", encoding="utf-8") as f:
             json.dump(export_data, f, indent=2)
 
-    # ------------------------------------------------------------------ #
 
     def show_error(self, message: str):
         self.status_label.setText(f"Error: {message}")

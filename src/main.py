@@ -7,14 +7,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'event-bits'))
 
 from analysis import get_noise_bits
 from analysis_result_widget import AnalysisResultWidget
-from autoencoder_detector_widget import AutoencoderDetectorWidget
 from baseline_selector_widget import BaselineSelectorWidget
 from data_widget import DataWidget
 from event_source_selector_widget import EventSourceSelectorWidget
 from inspector_widget import InspectorWidget
 from instruction_generator_widget import InstructionGeneratorWidget
 from instruction_panel_widget import InstructionPanelWidget
-from result_widget import ResultWidget
 from settings import InputMode, Settings
 
 
@@ -37,14 +35,10 @@ class MainWindow(QMainWindow):
         data_splitter.setStretchFactor(0, 2)
         data_splitter.setStretchFactor(1, 1)
 
-        result_tab = ResultWidget(self.settings)
-        autoencoder_detector_tab = AutoencoderDetectorWidget(self.settings)
         self.analysis_result_tab = AnalysisResultWidget(self.settings)
 
         self.tabs = QTabWidget()
         self.tabs.addTab(data_splitter, "Data")
-        self.tabs.addTab(result_tab, "Result")
-        self.tabs.addTab(autoencoder_detector_tab, "Autoencoder detector")
         self.tabs.addTab(self.analysis_result_tab, "Bit Analysis")
 
         self.dock = QDockWidget("Select Events", self)
@@ -96,12 +90,6 @@ class MainWindow(QMainWindow):
         self.settings.baseline_path = result_path
         self.settings.baseline_noise_bits = get_noise_bits(result_path)
 
-        total_noise_bits = sum(len(bits) for bits in self.settings.baseline_noise_bits.values())
-        #total_bits = sum(frame.len * 8 for frame in self.settings.frames.values())
-        total_bits = len(self.settings.baseline_noise_bits) * 64  # Approximation: assume noise bits could be anywhere
-        
-        print(f"Baseline done. Found {total_noise_bits} noise bits across {len(self.settings.baseline_noise_bits)} IDs. Total bits in data: {total_bits}.")
-
         if self.settings.baseline_is_recording:
             self.settings.last_export_baseline = result_path
 
@@ -150,7 +138,6 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication()
-
     window = MainWindow()
     window.resize(1280, 720)
     window.show()

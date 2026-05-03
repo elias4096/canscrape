@@ -1,17 +1,15 @@
 import sys
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QCheckBox, QLabel, QPushButton, QTextEdit
+    QApplication, QWidget, QVBoxLayout, QCheckBox, QLabel, QPushButton
 )
 
-# ---------------- HELPERS ----------------
 def interface(text):
     return f"[INSPECTOR] {text}"
 
 def event(text):
     return f"[EVENT] {text}"
 
-# ---------------- DATA ----------------
 OUTSIDE_ORDER = [
     "driver_door",
     "passenger_door",
@@ -60,7 +58,6 @@ PASSENGER_TEXT = {
     "passenger_seatbelt": "Sätt på och ta av fram-passagerarens säkerhetsbälte tre till fyra gånger."
 }
 
-# ---------------- LOGIC ----------------
 def generate_instructions(selected):
     instructions = []
     instruction_pairs = []
@@ -73,7 +70,7 @@ def generate_instructions(selected):
         instructions.append(interface(interface_text))
         instructions.append(event(event_text))
 
-    # -------- DRIVER --------
+    # Driver
     driver_actions = [x for x in INSIDE_DRIVER_ORDER if x in selected]
     has_driver_door = "driver_door" in selected
 
@@ -112,7 +109,7 @@ def generate_instructions(selected):
                 INSIDE_DRIVER_TEXT[action]
             )
 
-    # -------- PASSENGER --------
+    # Passenger
     passenger_actions = [x for x in INSIDE_PASSENGER_ORDER if x in selected]
     has_passenger_door = "passenger_door" in selected
 
@@ -144,7 +141,7 @@ def generate_instructions(selected):
                 PASSENGER_TEXT[action]
             )
 
-    # -------- ÖVRIGA DÖRRAR --------
+    # Remaining doors
     for door in OUTSIDE_ORDER:
         if door in ["driver_door", "passenger_door"]:
             continue
@@ -156,7 +153,7 @@ def generate_instructions(selected):
                 DOOR_TEXT[door]
             )
 
-    # front passenger door standalone
+    # Front passenger door standalone
     if has_passenger_door and not passenger_actions:
         name = EVENT_NAMES["passenger_door"]
         add_step(
@@ -167,7 +164,6 @@ def generate_instructions(selected):
     return instructions, instruction_pairs
 
 
-# ---------------- UI ----------------
 class InstructionGeneratorWidget(QWidget):
     next_clicked = Signal()
 

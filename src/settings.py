@@ -27,7 +27,6 @@ class Settings(QObject):
 
     def __init__(self):
         super().__init__()
-        # Public
         self.csv_filepath = str()
         self.serial_port: str = "COM9"
         self.baseline_path = str()
@@ -39,7 +38,6 @@ class Settings(QObject):
         self.last_export_baseline: str = ""
         self.last_export_raw: str = ""
         self.last_export_json: str = ""
-        # Todo: rename to current_frame_index
         self.frame_count: int = 0
         self.frames: Dict[int, CanFrame] = {}
         self.all_frames: List[SimpleCanFrame] = []
@@ -59,7 +57,6 @@ class Settings(QObject):
             "Passenger Seatbelt": EventInterval([], []),
         }
 
-        # Private
         self._input_mode = InputMode.Off
         self._detection_mode = DetectionMode.Off
 

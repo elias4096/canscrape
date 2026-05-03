@@ -190,7 +190,6 @@ class DataWidget(QWidget):
             print(f"load_snapshot error: {e}")
             traceback.print_exc()
 
-    # ------------------------------------------------------------------ #
 
     def update_table(self, msg: Message):
         if self.settings.initial_timestamp <= 0.0:
