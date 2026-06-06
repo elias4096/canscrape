@@ -48,7 +48,7 @@ class AnalysisResultWidget(QWidget):
 
         self.settings = settings
 
-        settings.setInputMode(InputMode.SerialPort)
+        settings.setInputMode(InputMode.PeakCAN)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)

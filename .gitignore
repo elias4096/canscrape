@@ -181,5 +181,5 @@ cython_debug/
 .cursorindexingignore
 
 # Custom output files
-.selected_bits.json
 /src/output
+selected_bits.json
